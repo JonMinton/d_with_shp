@@ -22,7 +22,7 @@
           Total.boot <- sum(total.boot)
           D.boot[j] <- sum(total.boot * abs(proportion.boot - proportion.overall.boot)) / (2 * Total.boot * proportion.overall.boot * (1-proportion.overall.boot))    
           }
-     D.estimate <- c(D, quantile(D.boot, c(0.025, 0.975)))
+     D.estimate <- c(D, quantile(D.boot, c(0.025, 0.975), na.rm=T))
      results <- list(D.estimate=D.estimate, D.boot=D.boot)
      return(results)
      }
