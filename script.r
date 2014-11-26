@@ -54,7 +54,10 @@ datazones_shp <- readShapeSpatial(
 
 # Create proportions
 example_pop <- transform(example_pop, proportion=workingage_count/total_count)
-example_pop <- example_pop[!which(example_pop$total == 0),] # remove zero count area
+example_pop <- subset(
+  example_pop,
+  select = total_count > 0
+  )
 
 example_house <- transform(example_house, proportion=councilhouse_count/total_count)
 
