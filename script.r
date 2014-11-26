@@ -61,8 +61,8 @@ example_pop <- subset(
   subset=total_count > 0
 )
 
-
-example_house <- transform(example_house, proportion=councilhouse_count/total_count)
+# 
+# example_house <- transform(example_house, proportion=councilhouse_count/total_count)
 
 # fortify shapefiles
 datazones_shp@data$id <- rownames(datazones_shp@data)
@@ -93,9 +93,11 @@ house_joined <- arrange(house_joined, group, order)
 # uses code from spdep
 
 ## Create the neighbourhood matrix
-datazones_shp_ss <- datazones
-W_nb <- poly2nb(datazones_shp)              
-names(W_nb) <- id_name[,2]
+datazones_shp_ss <- datazones_shp[datazones_shp$zonecode != zero_counts,]
+id_name_ss <- id_name[id_name$zonecode != zero_counts,]
+
+W_nb <- poly2nb(datazones_shp_ss)              
+names(W_nb) <- id_name_ss[,2]
 W_mat <- nb2mat(W_nb, style="B", zero.policy=TRUE)
 
 
