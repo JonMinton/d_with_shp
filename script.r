@@ -54,10 +54,13 @@ datazones_shp <- readShapeSpatial(
 
 # Create proportions
 example_pop <- transform(example_pop, proportion=workingage_count/total_count)
+zero_counts <- example_pop$datazone[example_pop$total_count == 0]
+
 example_pop <- subset(
   example_pop,
-  select = total_count > 0
-  )
+  subset=total_count > 0
+)
+
 
 example_house <- transform(example_house, proportion=councilhouse_count/total_count)
 
@@ -90,6 +93,7 @@ house_joined <- arrange(house_joined, group, order)
 # uses code from spdep
 
 ## Create the neighbourhood matrix
+datazones_shp_ss <- datazones
 W_nb <- poly2nb(datazones_shp)              
 names(W_nb) <- id_name[,2]
 W_mat <- nb2mat(W_nb, style="B", zero.policy=TRUE)
