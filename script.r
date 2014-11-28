@@ -39,12 +39,24 @@ theme_clean <- function(base_size=12){
 }
 
 
+
+########################################################################
+data_option <- "working_age_population"
+
+
 #################################################################################################
 # DATA MANAGEMENT
 # Load data for n/N
 
-example_pop <- read.csv("data/working_age_people_1996.csv")
-example_house <- read.csv("data/council_houses_2011.csv")
+if (data_option=="working_age_population"){
+  attribute_data <- read.csv("data/working_age_people_1996.csv")
+  attribute_data <- rename(attribute_data, replace=c("workingage_count" = "numerator_count"))
+} else {
+  if (data_option=="council_houses"){
+    attribute_data <- read.csv("data/council_houses_2011.csv")
+    attribute_data <- rename(attribute_data, replace=c("councilhouse_count"="numerator_count"))
+  }  
+}
 
 
 # Load shapefiles
@@ -52,82 +64,27 @@ datazones_shp <- readShapeSpatial(
   "shp/scotland_2001_datazones/scotland_dz_2001.shp"
 )
 
-# Create proportions
-example_pop <- transform(example_pop, proportion=workingage_count/total_count)
-
 # add example_pop as to data slot in datazone_shp here?!
 # If so, how?
 
 datazones_shp@data <- rename(datazones_shp@data, replace=c("zonecode"="datazone"))
 
-# datazones_shp@data <- join(
-#   datazones_shp@data,
-#   example_pop,
-#   type="inner"
-#   )
- datazones_shp@data <- merge(
+datazones_shp@data <- join(
   datazones_shp@data,
-  example_pop,
-  by="datazone",
-  all.y=T
+  attribute_data,
+  type="inner"
   )
-# > dim(datazones_shp)
-# [1] 6610    9
-# > dim(example_pop)
-# [1] 6505    5
-# > dim(datazones_shp@data)
-# [1] 6610    9
 
+datazones_shp <- datazones_shp[duplicated(datazones_shp@data$datazone)==F,]
 
+datazones_shp <- datazones_shp[datazones_shp@data$total_count > 0,]
 
-##
-
-
-# 
-# zero_counts <- example_pop$datazone[example_pop$total_count == 0]
-# 
-# example_pop <- subset(
-#   example_pop,
-#   subset=total_count > 0
-# )
-# 
-# # 
-# example_house <- transform(example_house, proportion=councilhouse_count/total_count)
-# 
-# # fortify shapefiles
-# datazones_shp@data$id <- rownames(datazones_shp@data)
-# id_name <- subset(datazones_shp@data, select=c("id", "zonecode"))
-# 
-# # datazones_map <- fortify(datazones_shp)
-# datazones_map <- join(datazones_map, id_name)
-# datazones_map <- rename(datazones_map, replace=c("zonecode"="datazone"))
-# 
-
-
-
-# # Connect pop to dzs
-# 
-# pop_joined <- join(datazones_map, example_pop, by="datazone", type="full")
-# pop_joined <- arrange(pop_joined, group, order)
-# 
-# # Connect house to dzs
-# 
-# house_joined <- join(datazones_map, example_house, by="datazone", type="full")
-# house_joined <- arrange(house_joined, group, order)
-
-
-##############
-
-# Creating w matrix
 
 # uses code from spdep
 
 ## Create the neighbourhood matrix
-datazones_shp_ss <- datazones_shp[id_name$zonecode %in% example_pop$datazones,]
-id_name_ss <- id_name[id_name$zonecode %in% example_pop$datazones,]
 
-W_nb <- poly2nb(datazones_shp_ss)              
-names(W_nb) <- id_name_ss[,2]
+W_nb <- poly2nb(datazones_shp)              
 W_mat <- nb2mat(W_nb, style="B", zero.policy=TRUE)
 
 
@@ -144,14 +101,46 @@ W_mat <- nb2mat(W_nb, style="B", zero.policy=TRUE)
 # with the argument
 # family="binomial"
 
+D_classical <- Dissimilarity.compute(
+  minority=datazones_shp@data$numerator_count,
+  total=datazones_shp@data$total_count
+)
+
+
+
 model <- iarCAR.re(
-  formula = workingage_count  ~ 1,
-  trials = example_pop$total_count,
+  formula = numerator_count  ~ 1,
+  trials = datazones_shp@data$total_count,
   W=W_mat,
-  data=example_pop,
+  data=datazones_shp@data,
   family="binomial"
 )
 
+posterior.D <- array(NA, c(1000))
+for(k in 1:1000){
+  p.current <- exp(
+    model$samples$phi[k ,] + model$samples$beta[k,1]
+  )   / (
+    1 + exp(
+      model$samples$phi[k ,] + model$samples$beta[k,1]
+    )
+  )
+  
+  p.current.overall <- sum(
+    p.current * datazones_shp@data$total_count
+  ) / sum(
+    datazones_shp@data$total_count
+  )
+  
+  posterior.D[k] <- sum(
+    datazones_shp@data$total_count * abs(p.current - p.current.overall)
+  ) / (
+    2 * sum(datazones_shp@data$total_count) * p.current.overall * (1-p.current.overall))     
+  
+}
+
+
+Dbayes <- round(quantile(posterior.D, c(0.5, 0.025, 0.975)),4)
 
 ##########################
 #### Set up the simulation
@@ -195,10 +184,7 @@ n_area <- nrow(example_pop)
 # Dtrue <- sum(N * abs(probs() - probs.overall)) / (2 * sum(N) * probs.overall * (1-probs.overall))    
     
 ## Run the classical method
-D_classical <- Dissimilarity.compute(
-  minority=example_pop$workingage_count+0.5,
-  total=example_pop$total_count+0.5
-  )
+
     
 
 
