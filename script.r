@@ -60,19 +60,23 @@ example_pop <- transform(example_pop, proportion=workingage_count/total_count)
 
 datazones_shp@data <- rename(datazones_shp@data, replace=c("zonecode"="datazone"))
 
-datazones_shp@data <- join(
+# datazones_shp@data <- join(
+#   datazones_shp@data,
+#   example_pop,
+#   type="inner"
+#   )
+ datazones_shp@data <- merge(
   datazones_shp@data,
   example_pop,
-  type="inner"
+  by="datazone",
+  all.y=T
   )
-
-datazones_shp <- datazones_shp[datazones_shp@data$total_count > 0,]
-
-####
 # > dim(datazones_shp)
-# [1] 6609    9
+# [1] 6610    9
 # > dim(example_pop)
 # [1] 6505    5
+# > dim(datazones_shp@data)
+# [1] 6610    9
 
 
 
