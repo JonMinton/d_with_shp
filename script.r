@@ -58,6 +58,26 @@ example_pop <- transform(example_pop, proportion=workingage_count/total_count)
 # add example_pop as to data slot in datazone_shp here?!
 # If so, how?
 
+datazones_shp@data <- rename(datazones_shp@data, replace=c("zonecode"="datazone"))
+
+datazones_shp@data <- join(
+  datazones_shp@data,
+  example_pop,
+  type="inner"
+  )
+
+datazones_shp <- datazones_shp[datazones_shp@data$total_count > 0,]
+
+####
+# > dim(datazones_shp)
+# [1] 6609    9
+# > dim(example_pop)
+# [1] 6505    5
+
+
+
+##
+
 
 # 
 # zero_counts <- example_pop$datazone[example_pop$total_count == 0]
