@@ -54,36 +54,42 @@ datazones_shp <- readShapeSpatial(
 
 # Create proportions
 example_pop <- transform(example_pop, proportion=workingage_count/total_count)
-zero_counts <- example_pop$datazone[example_pop$total_count == 0]
 
-example_pop <- subset(
-  example_pop,
-  subset=total_count > 0
-)
+# add example_pop as to data slot in datazone_shp here?!
+# If so, how?
+
 
 # 
+# zero_counts <- example_pop$datazone[example_pop$total_count == 0]
+# 
+# example_pop <- subset(
+#   example_pop,
+#   subset=total_count > 0
+# )
+# 
+# # 
 # example_house <- transform(example_house, proportion=councilhouse_count/total_count)
+# 
+# # fortify shapefiles
+# datazones_shp@data$id <- rownames(datazones_shp@data)
+# id_name <- subset(datazones_shp@data, select=c("id", "zonecode"))
+# 
+# # datazones_map <- fortify(datazones_shp)
+# datazones_map <- join(datazones_map, id_name)
+# datazones_map <- rename(datazones_map, replace=c("zonecode"="datazone"))
+# 
 
-# fortify shapefiles
-datazones_shp@data$id <- rownames(datazones_shp@data)
-id_name <- subset(datazones_shp@data, select=c("id", "zonecode"))
-
-datazones_map <- fortify(datazones_shp)
-datazones_map <- join(datazones_map, id_name)
-datazones_map <- rename(datazones_map, replace=c("zonecode"="datazone"))
 
 
-
-
-# Connect pop to dzs
-
-pop_joined <- join(datazones_map, example_pop, by="datazone", type="full")
-pop_joined <- arrange(pop_joined, group, order)
-
-# Connect house to dzs
-
-house_joined <- join(datazones_map, example_house, by="datazone", type="full")
-house_joined <- arrange(house_joined, group, order)
+# # Connect pop to dzs
+# 
+# pop_joined <- join(datazones_map, example_pop, by="datazone", type="full")
+# pop_joined <- arrange(pop_joined, group, order)
+# 
+# # Connect house to dzs
+# 
+# house_joined <- join(datazones_map, example_house, by="datazone", type="full")
+# house_joined <- arrange(house_joined, group, order)
 
 
 ##############
@@ -93,8 +99,8 @@ house_joined <- arrange(house_joined, group, order)
 # uses code from spdep
 
 ## Create the neighbourhood matrix
-datazones_shp_ss <- datazones_shp[datazones_shp$zonecode != zero_counts,]
-id_name_ss <- id_name[id_name$zonecode != zero_counts,]
+datazones_shp_ss <- datazones_shp[id_name$zonecode %in% example_pop$datazones,]
+id_name_ss <- id_name[id_name$zonecode %in% example_pop$datazones,]
 
 W_nb <- poly2nb(datazones_shp_ss)              
 names(W_nb) <- id_name_ss[,2]
