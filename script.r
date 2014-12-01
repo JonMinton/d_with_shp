@@ -148,12 +148,12 @@ Dbayes <- round(quantile(posterior.D, c(0.5, 0.025, 0.975)),4)
 
 
 
-
-
-seed_value <- 20
-mean_value <- mean(example_pop$proportion)
-sd_value <- sd(example_pop$proportion)
-n_area <- nrow(example_pop)
+# 
+# 
+# seed_value <- 20
+# mean_value <- mean(example_pop$proportion)
+# sd_value <- sd(example_pop$proportion)
+# n_area <- nrow(example_pop)
 
 # # to begin with assume no correlation 
 # sigma <- diag(1, nrow=n_area, ncol=n_area)
@@ -184,30 +184,30 @@ n_area <- nrow(example_pop)
 # Dtrue <- sum(N * abs(probs() - probs.overall)) / (2 * sum(N) * probs.overall * (1-probs.overall))    
     
 ## Run the classical method
-
-    
-
-
-iarCAR.re
-model <- binomial.iarCAR(formula=data()~1, trials=N, W=W, burnin=1000, n.sample=2000) 
-posterior.D <- array(NA, c(1000))
-for(k in 1:1000){
-  p.current <- exp(model$samples$phi[k ,] + model$samples$beta[k,1])   / (1 + exp(model$samples$phi[k ,] + model$samples$beta[k,1])) 
-  p.current.overall <- sum(p.current * rep(input$n.population,n.area)) / sum(rep(input$n.population,n.area))
-  posterior.D[k] <- sum(rep(input$n.population,n.area) * abs(p.current - p.current.overall)) / (2 * sum(rep(input$n.population,n.area)) * p.current.overall * (1-p.current.overall))     
-}
-
-Dbayes <- round(quantile(posterior.D, c(0.5, 0.025, 0.975)),4)
-    
-## Save the results
-results2 <- array(NA, c(2,3))
-rownames(results2) <- c("Classical results", "Bayesian results")
-colnames(results2) <- c("", "", "")
-results2[1 , ] <- Dclassical
-results2[2 , ] <- Dbayes
-results2 <- round(results2, 4)
-    
-results1 <- Dtrue    
-results <- list(results1, results2)
-names(results) <- c("True value of D", "Estimated values of D")
-results     
+# 
+#     
+# 
+# 
+# iarCAR.re
+# model <- binomial.iarCAR(formula=data()~1, trials=N, W=W, burnin=1000, n.sample=2000) 
+# posterior.D <- array(NA, c(1000))
+# for(k in 1:1000){
+#   p.current <- exp(model$samples$phi[k ,] + model$samples$beta[k,1])   / (1 + exp(model$samples$phi[k ,] + model$samples$beta[k,1])) 
+#   p.current.overall <- sum(p.current * rep(input$n.population,n.area)) / sum(rep(input$n.population,n.area))
+#   posterior.D[k] <- sum(rep(input$n.population,n.area) * abs(p.current - p.current.overall)) / (2 * sum(rep(input$n.population,n.area)) * p.current.overall * (1-p.current.overall))     
+# }
+# 
+# Dbayes <- round(quantile(posterior.D, c(0.5, 0.025, 0.975)),4)
+#     
+# ## Save the results
+# results2 <- array(NA, c(2,3))
+# rownames(results2) <- c("Classical results", "Bayesian results")
+# colnames(results2) <- c("", "", "")
+# results2[1 , ] <- Dclassical
+# results2[2 , ] <- Dbayes
+# results2 <- round(results2, 4)
+#     
+# results1 <- Dtrue    
+# results <- list(results1, results2)
+# names(results) <- c("True value of D", "Estimated values of D")
+# results     
