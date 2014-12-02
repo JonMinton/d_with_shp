@@ -4,25 +4,38 @@ shinyUI(fluidPage(
   titlePanel("Test"),
   sidebarLayout(
     sidebarPanel(
+      
       selectInput(
         "option",
-        "Choose something",
+        "Choose a dataset",
         choices=c(
-          "Working age population/total population"="working_age_population",
-          "Council houses/all houses"="council_houses"
-          ),
+          "country of origin, 2001"="coo_2001",
+          "religion, 2001"="rel_2001",
+          "ethnicity, 2001"="eg_2001",
+          "country of origin, 2011"="coo_2011",
+          "religion, 2011"="rel_2011",
+          "ethnicity, 2011"="eg_2011" 
         )
       ),
+      
+      actionButton("action", label = "Get Data"),
+      
+      uiOutput("numerator"),
+      uiOutput("denominator")
+      ),
+    
     mainPanel(
-      textOutput("BlahBlah"),
+      
+      textOutput("selection"),
       br(),
-      textOutput("out2")
+      textOutput("describe_num_and_denom"),
+      h1("table of variables"),
+      tableOutput("num_and_dom")
       )
     )
     
-  )
+))
   
-)
 
 
 # shinyUI(fluidPage(
