@@ -174,20 +174,20 @@ shinyServer(function(input, output){
       input$action
       out <- isolate(load_selection(input$option))
       out <- as.vector(out$type)
-      selectInput("sub_option", "Select numerator", choices=out)
+      selectInput("sub_option_num", "Select numerator", choices=out)
     })
     
     output$denominator <- renderUI({
       input$action
       out <- isolate(load_selection(input$option))
       out <- as.vector(out$type)
-      selectInput("sub_option", "Select denominator", choices=out)
+      selectInput("sub_option_denom", "Select denominator", choices=out)
     })
     
     
     output$describe_num_and_denom <- renderText({
-      paste("The numerator is ", output$numerator, 
-            " and the denominator is ", output$denominator)
+      paste("The numerator is ", input$sub_option_num, 
+            " and the denominator is ",input$sub_option_denom)
     })
     
     
