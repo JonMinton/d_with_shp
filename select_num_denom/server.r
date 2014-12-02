@@ -1,7 +1,7 @@
 # #####################################################################################################
 # 
 # require(reshape2)
-
+library(Rcpp)
 library(dplyr)
 # require(stringr)
 # require(ggplot2)
