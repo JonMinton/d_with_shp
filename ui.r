@@ -1,29 +1,56 @@
+
+
 shinyUI(fluidPage(
-  titlePanel("D vignettes"),
+  titlePanel("Test"),
   sidebarLayout(
     sidebarPanel(
       selectInput(
-        "data_option",
-        "Select a vignette",
+        "option",
+        "Choose something",
         choices=c(
-          "working_age_population" = "working age population",
-          "council_houses" = "council houses"
+          "Working age population/total population"="working_age_population",
+          "Council houses/all houses"="council_houses"
           ),
-        selected=NULL
-        ),
-      submitButton(text="Start simulation")
+        )
       ),
     mainPanel(
-      h1(textOutput(
-        paste(
-          "The vignette: ", data_option  
-          )
-        )),
-      plotOutput(
-        "plot"
-        )
+      textOutput("BlahBlah"),
+      br(),
+      textOutput("out2")
       )
     )
+    
+  )
   
-  ))
+)
+
+
+# shinyUI(fluidPage(
+#   titlePanel("D vignettes"),
+#   sidebarLayout(
+#     sidebarPanel(
+#       selectInput(
+#         "data_option",
+#         "Select a vignette",
+#         choices=c(
+#           "working_age_population" = "working age population",
+#           "council_houses" = "council houses"
+#           ),
+#         selected=NULL
+#         ),
+#       submitButton(text="Start simulation")
+#       ),
+#     mainPanel(
+#       h1(textOutput(
+#         paste(
+#           "The vignette: ", data_option  
+#           )
+#         )),
+#       plotOutput(
+#         "plot"
+#         )
+#       )
+#     )
+#   
+#   ))
 
