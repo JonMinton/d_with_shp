@@ -146,49 +146,133 @@ library(dplyr)
 # 
 # 
 
-load_selection <- function(file_name){
-  data <- read.csv(paste0("data/", file_name, ".csv"))
-  out <- data %>% group_by(type) %>% summarise(count=sum(count))
-  out <- data.frame(out)
-  return(out)
-}
-
+num <- 0
+denom <- 0
+tab <- 0
 
 shinyServer(function(input, output){
-    
-
-
-    output$selection <- renderText({
-      input$action
-      paste("the selection is ", isolate(input$option))
+  
+  load_data <- reactive({
+    file_name <- input$option
+    data <- read.csv(paste0("data/", file_name, ".csv"))
+    return(data)
     })
     
-
-    output$num_and_dom <- renderTable({
-      input$action
-      variables_to_select <- isolate(load_selection(input$option))
-      return(variables_to_select)
-      })
+  summarise_data <- reactive({
+    data <- load_data()
+    out <- data %>% group_by(type) %>% summarise(count=sum(count))
+    out <- data.frame(out)
+    return(out)
+  })
+  
+  get_labels <- reactive({
+    labels <- levels(load_data()$type) %>% as.character() %>% sort()
+    return(labels)
+  })
+  
+  
+  combine_input_table <- reactive({
+    tab <<- tab + 1 
+    cat("tab: ", tab, "\n")
     
+    go <- input$ok_num_denom
+    
+    numerators <- isolate(input$numerator_selection)
+    denominators <- isolate(input$denominator_selection)
+    
+    if (go & !is.null(numerators) & !is.null(denominators)){
+      cat("numerators: ")
+      for (i in 1:length(numerators)) {cat(numerators[i], "\n")}
+      cat("\n\n")
+
+      cat("denominators: ")
+      for (i in 1:length(denominators)) {cat(denominators[i], "\n")}
+      cat("\n\n")
+      
+      
+      data_raw <- load_data()
+      data_raw <- data_raw %>% select(datazone, type, count)
+      
+      data_numerator <- data_raw %>% 
+        filter(type %in% numerators) %>%
+        group_by(datazone) %>% summarise(numerator=sum(count))
+      
+      data_denominator <- data_raw %>% 
+        filter(type %in% denominators) %>%
+        group_by(datazone) %>% summarise(denominator=sum(count))
+      
+      
+      data_out <- inner_join(data_denominator, data_numerator)
+      out <- list(
+        denom=data_denominator,
+        numer=data_numerator,
+        combined=data_out
+      )                  
+    } else {out <- NULL}
+
+    return(out)
+  })
+
     output$numerator <- renderUI({
-      input$action
-      out <- isolate(load_selection(input$option))
-      out <- as.vector(out$type)
-      selectInput("sub_option_num", "Select numerator", choices=out)
+      num <<- num + 1
+      cat("num: ", num, "\n")
+      selections <- get_labels()
+      selectInput("numerator_selection", "Select numerator", choices=selections, multiple=T)
     })
-    
+  
     output$denominator <- renderUI({
-      input$action
-      out <- isolate(load_selection(input$option))
-      out <- as.vector(out$type)
-      selectInput("sub_option_denom", "Select denominator", choices=out)
+      denom <<- denom + 1
+      cat("denom: ", denom, "\n")
+      selections <- get_labels()
+      selectInput("denominator_selection", "select denominator", choices=selections, multiple=T)
     })
-    
-    
-    output$describe_num_and_denom <- renderText({
-      paste("The numerator is ", input$sub_option_num, 
-            " and the denominator is ",input$sub_option_denom)
+  
+    output$table01 <- renderTable({
+      out <- combine_input_table()
+      out <- as.data.frame(out$denom)
+      out <- head(out)
+      return(out)
     })
+  
+    output$table02 <- renderTable({
+      out <- combine_input_table()
+      out <- as.data.frame(out$numer)
+      out <- head(out)
+      return(out)
+    })
+  
+    output$table03 <- renderTable({
+      out <- combine_input_table()
+      out <- as.data.frame(out$combined)
+      out <- head(out)
+      return(out)
+    })
+  
+#     output$table01 <- renderTable({
+#       out <- as.data.frame(output$numerator)
+#       return(out)
+#     })
+#   
+#     output$table02 <- renderTable({
+#       out <- as.data.frame(output$denominator)
+#       return(out)
+#     })
+  
+#     
+#     output$denominator <- renderUI({
+#       input$action
+#       out <- isolate(load_selection(input$option))
+#       out <- as.vector(out$type)
+#       selectInput("sub_option_denom", "Select denominator", choices=out, multiple=T)
+#     })
+#     
+#     
+#     output$describe_num_and_denom <- renderText({
+#       numerator_info <- numerator_selection()
+#       cat("in describe_num_and_denom\n")
+#       browser()
+# 
+#     })
     
     
 #     output$out2 <- renderTable({

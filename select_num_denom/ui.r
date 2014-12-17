@@ -15,22 +15,21 @@ shinyUI(fluidPage(
           "country of origin, 2011"="coo_2011",
           "religion, 2011"="rel_2011",
           "ethnicity, 2011"="eg_2011" 
-        )
+        ),
+        selected=""
       ),
       
-      actionButton("action", label = "Get Data"),
-      
       uiOutput("numerator"),
-      uiOutput("denominator")
+      uiOutput("denominator"),
+      actionButton("ok_num_denom", "compile selection")
       ),
     
     mainPanel(
+      tableOutput("table01"),
+      tableOutput("table02"),
+      tableOutput("table03")
       
-      textOutput("selection"),
-      br(),
-      textOutput("describe_num_and_denom"),
-      h1("table of variables"),
-      tableOutput("num_and_dom")
+
       )
     )
     
