@@ -5,10 +5,10 @@ library(Rcpp)
 library(dplyr)
 # require(stringr)
 # require(ggplot2)
-# require(maptools)
+ require(maptools)
 # require(grid)
-# require(spdep)
-# require(Rcpp)
+ require(spdep)
+ require(Rcpp)
 # require(MASS)
 # require(CARBayes)
 # 
@@ -39,32 +39,12 @@ library(dplyr)
 #       
 #       
 #       # Load shapefiles
-#       datazones_shp <- readShapeSpatial(
-#         "shp/scotland_2001_datazones/scotland_dz_2001.shp"
-#       )
+
 #       
-#       # add example_pop as to data slot in datazone_shp here?!
-#       # If so, how?
-#       
-#       datazones_shp@data <- rename(datazones_shp@data, replace=c("zonecode"="datazone"))
-#       
-#       datazones_shp@data <- join(
-#         datazones_shp@data,
-#         attribute_data,
-#         type="inner"
-#       )
-#       
-#       datazones_shp <- datazones_shp[duplicated(datazones_shp@data$datazone)==F,]
-#       
-#       datazones_shp <- datazones_shp[datazones_shp@data$total_count > 0,]
+
 #       
 #       
-#       # uses code from spdep
-#       
-#       ## Create the neighbourhood matrix
-#       
-#       W_nb <- poly2nb(datazones_shp)              
-#       W_mat <- nb2mat(W_nb, style="B", zero.policy=TRUE)
+
 #       
 #       
 #       #####################################################################################
@@ -152,6 +132,24 @@ tab <- 0
 
 shinyServer(function(input, output){
   
+  ###############################################################################################
+  #####  REACTIVE FUNCTIONS #####################################################################
+  ###############################################################################################
+  
+  
+  load_shapefiles <- reactive({
+    go <- input$load_shapefile_button
+    
+    if (go){
+      out <- readShapeSpatial(
+        "shp/scotland_2001_datazones/scotland_dz_2001.shp"
+      )      
+      out@data <- rename(out@data, datazone=zonecode)
+      
+    } else {out <- NULL}
+    return(out)
+  })
+  
   load_data <- reactive({
     file_name <- input$option
     data <- read.csv(paste0("data/", file_name, ".csv"))
@@ -170,6 +168,32 @@ shinyServer(function(input, output){
     return(labels)
   })
   
+  link_shp_with_attributes <- reactive({
+    shp_data <- load_shapefiles()    
+    att_data <- combine_input_table()
+    
+    if (!is.null(shp_data) & !is.null(att_data)){
+      out <- shp_data
+      # The data can be loaded
+      out@data <- plyr::join(out@data, att_data)
+    } else {
+      # The data cannot be linked
+      out <- NULL
+    }
+    return(out)
+  })
+  
+  generate_w_matrix <- reactive({
+    go <- input$make_w_matrix_button
+    if (go){
+      dta <- link_shp_with_attributes()
+      if (!is.null(dta)){
+        w_nb <- poly2nb(dta)
+        out <- nb2mat(w_nb, style="B", zero.policy=TRUE)
+      } else { out <- NULL}      
+    } else {out <- NULL}
+    return(out)
+  })
   
   combine_input_table <- reactive({
     tab <<- tab + 1 
@@ -203,16 +227,15 @@ shinyServer(function(input, output){
       
       
       data_out <- inner_join(data_denominator, data_numerator)
-      out <- list(
-        denom=data_denominator,
-        numer=data_numerator,
-        combined=data_out
-      )                  
+      out <- data_out                  
     } else {out <- NULL}
 
     return(out)
   })
 
+  #############################################################################################
+  ### REACTIVE UIS ############################################################################
+  #############################################################################################
     output$numerator <- renderUI({
       num <<- num + 1
       cat("num: ", num, "\n")
@@ -227,24 +250,54 @@ shinyServer(function(input, output){
       selectInput("denominator_selection", "select denominator", choices=selections, multiple=T)
     })
   
+  
+  ##############################################################################################
+  ### OUTPUTS ##################################################################################
+  ##############################################################################################
+    output$text01 <- renderText({
+      shapefiles <- load_shapefiles()
+      if (is.null(shapefiles)){
+        out <- "Shapefiles not yet loaded"
+      } else {
+        out <- paste("The length of the shapefile object is ", length(shapefiles))
+      }
+      return(out)
+    })
+  
+  
     output$table01 <- renderTable({
       out <- combine_input_table()
-      out <- as.data.frame(out$denom)
+      out <- as.data.frame(out)
       out <- head(out)
+      return(out)
+    })
+  
+    output$text02 <- renderText({
+      dta <- link_shp_with_attributes() 
+      if (is.null(dta)){
+        out <- "The data cannot be merged yet"
+      } else {
+        out <- "the data have been merged"
+      }
       return(out)
     })
   
     output$table02 <- renderTable({
-      out <- combine_input_table()
-      out <- as.data.frame(out$numer)
-      out <- head(out)
+      dta <- link_shp_with_attributes()
+      if (!is.null(dta)){
+        out <- head(dta@data)        
+      } else {out <- NULL}
       return(out)
     })
   
-    output$table03 <- renderTable({
-      out <- combine_input_table()
-      out <- as.data.frame(out$combined)
-      out <- head(out)
+    output$text03 <- renderText({
+      tmp <- generate_w_matrix()
+      if (is.null(tmp)){
+        out <- "The w matrix cannot be generated"
+      } else {
+        out <- paste("The w matrix has been generated and has dimensions", 
+                     dim(tmp)[1], " by ", dim(tmp)[2])
+      }
       return(out)
     })
   

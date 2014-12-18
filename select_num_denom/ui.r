@@ -21,15 +21,23 @@ shinyUI(fluidPage(
       
       uiOutput("numerator"),
       uiOutput("denominator"),
-      actionButton("ok_num_denom", "compile selection")
+      actionButton("ok_num_denom", "compile selection"),
+      br(),
+      br(),
+      actionButton("load_shapefile_button", "click to load the shapefile"),
+      br(),
+      actionButton("make_w_matrix_button", "click to generated the w matrix"),
+      sliderInput("seg_k", "Choose segregation thresholds",
+                  min=0, max=1, value=c(0,1))
+      
       ),
     
     mainPanel(
+      textOutput("text01"),
       tableOutput("table01"),
+      textOutput("text02"),
       tableOutput("table02"),
-      tableOutput("table03")
-      
-
+      textOutput("text03")
       )
     )
     
