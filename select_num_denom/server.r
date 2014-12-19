@@ -35,11 +35,8 @@ sourceCpp("scripts/cppfunctions.cpp")
       #####################################################################################
       #####################################################################################
       
-      ## Run the Bayesian model
 
-num <- 0
-denom <- 0
-tab <- 0
+
 
 shinyServer(function(input, output){
   
@@ -75,22 +72,9 @@ shinyServer(function(input, output){
     if (go){
       out <- array(NA, K)
       for(k in 1:K){
-        p.current <- exp(
-          model$samples$phi[k ,] + model$samples$beta[k,1]
-        )   / (
-          1 + exp(
-            model$samples$phi[k ,] + model$samples$beta[k,1]
-          )
-        )
-        
-        p.current.overall <- sum(
-          p.current *dta$denominator
-        ) / sum(dta$denominator)
-        
-        out[k] <- sum(
-          dta$denominator * abs(p.current - p.current.overall)
-        ) / (
-          2 * sum(dta$denominator) * p.current.overall * (1-p.current.overall))                 
+        p.current <- exp(model$samples$phi[k ,] + model$samples$beta[k,1])   / (1 + exp(model$samples$phi[k ,] + model$samples$beta[k,1]))
+        p.current.overall <- sum(p.current *dta$denominator) / sum(dta$denominator)
+        out[k] <- sum(dta$denominator * abs(p.current - p.current.overall)) / ( 2 * sum(dta$denominator) * p.current.overall * (1-p.current.overall))                 
       }
       
       
@@ -191,8 +175,7 @@ shinyServer(function(input, output){
   })
   
   combine_input_table <- reactive({
-    tab <<- tab + 1 
-    cat("tab: ", tab, "\n")
+
     
     go <- input$ok_num_denom
     
@@ -233,8 +216,7 @@ shinyServer(function(input, output){
     out <- Dissimilarity.compute(
       minority=dta$numerator,
       total=dta$denominator
-      )
-    browser()    
+      ) 
     return(out)
   })
 
@@ -242,15 +224,11 @@ shinyServer(function(input, output){
   ### REACTIVE UIS ############################################################################
   #############################################################################################
     output$numerator <- renderUI({
-      num <<- num + 1
-      cat("num: ", num, "\n")
       selections <- get_labels()
       selectInput("numerator_selection", "Select numerator", choices=selections, multiple=T)
     })
   
     output$denominator <- renderUI({
-      denom <<- denom + 1
-      cat("denom: ", denom, "\n")
       selections <- get_labels()
       selectInput("denominator_selection", "select denominator", choices=selections, multiple=T)
     })
