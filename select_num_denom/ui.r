@@ -27,9 +27,14 @@ shinyUI(fluidPage(
       actionButton("load_shapefile_button", "click to load the shapefile"),
       br(),
       actionButton("make_w_matrix_button", "click to generated the w matrix"),
+      br(),
+      actionButton("run_model_button", "click to run model"),
+      br(),
+      sliderInput("posterior_sample_size", "choose posterior sample size",
+                  min=1000, max=10000, step=1000, value=1000),
+      actionButton("generate_posterior_button", "Click to generate posterior distribution"),
       sliderInput("seg_k", "Choose segregation thresholds",
                   min=0, max=1, value=c(0,1))
-      
       ),
     
     mainPanel(

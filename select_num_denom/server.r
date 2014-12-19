@@ -1,8 +1,13 @@
+# Notes and to-dos
+
+# generate W matrix at start and load in
+
+
 # #####################################################################################################
 # 
 # require(reshape2)
 library(Rcpp)
-library(dplyr)
+
 # require(stringr)
 # require(ggplot2)
  require(maptools)
@@ -10,121 +15,29 @@ library(dplyr)
  require(spdep)
  require(Rcpp)
 # require(MASS)
-# require(CARBayes)
+ require(CARBayes)
+library(dplyr)
 # 
 # 
 # ###################################################################################################
 # # scripts
 # source("scripts/functions/binomial_iar_car.r")
-# source("scripts/functions/D_compute.r")
-# sourceCpp("scripts/functions/cppfunctions.cpp")
+source("scripts/D_compute.r")
+sourceCpp("scripts/cppfunctions.cpp")
 # 
 
-#      new_results <- reactive({
-#       data_option <- get_input_choice()
-#       
-#       #################################################################################################
-#       # DATA MANAGEMENT
-#       # Load data for n/N
-#       
-#       if (data_option=="working_age_population"){
-#         attribute_data <- read.csv("data/working_age_people_1996.csv")
-#         attribute_data <- rename(attribute_data, replace=c("workingage_count" = "numerator_count"))
-#       } else {
-#         if (data_option=="council_houses"){
-#           attribute_data <- read.csv("data/council_houses_2011.csv")
-#           attribute_data <- rename(attribute_data, replace=c("councilhouse_count"="numerator_count"))
-#         }  
-#       }
-#       
-#       
-#       # Load shapefiles
+ 
 
-#       
+      
+      
+      #####################################################################################
+      #####################################################################################
+      
+      ## Run the Bayesian model
 
-#       
-#       
 
-#       
-#       
-#       #####################################################################################
-#       #####################################################################################
-#       
-#       ## Run the Bayesian model
-#       
-#       # in the latest version of CARBayes 
-#       # the function 
-#       # binomial.iarCAR
-#       # has been replaced with
-#       # iarCAR.re 
-#       # with the argument
-#       # family="binomial"
-#       
-#       D_classical <- Dissimilarity.compute(
-#         minority=datazones_shp@data$numerator_count,
-#         total=datazones_shp@data$total_count
-#       )
-#       
-#       
-#       
-#       model <- iarCAR.re(
-#         formula = numerator_count  ~ 1,
-#         trials = datazones_shp@data$total_count,
-#         W=W_mat,
-#         data=datazones_shp@data,
-#         family="binomial"
-#       )
-#       
-#       posterior.D <- array(NA, c(1000))
-#       for(k in 1:1000){
-#         p.current <- exp(
-#           model$samples$phi[k ,] + model$samples$beta[k,1]
-#         )   / (
-#           1 + exp(
-#             model$samples$phi[k ,] + model$samples$beta[k,1]
-#           )
-#         )
-#         
-#         p.current.overall <- sum(
-#           p.current * datazones_shp@data$total_count
-#         ) / sum(
-#           datazones_shp@data$total_count
-#         )
-#         
-#         posterior.D[k] <- sum(
-#           datazones_shp@data$total_count * abs(p.current - p.current.overall)
-#         ) / (
-#           2 * sum(datazones_shp@data$total_count) * p.current.overall * (1-p.current.overall))     
-#         
-#       }
-#       
-#       
-#       Dbayes <- round(quantile(posterior.D, c(0.5, 0.025, 0.975)),4)
-#       output <- list(
-#         car_bayes = list(
-#           all_values = posterior.D,
-#           summaries= list(
-#             lower= quantile(posterior.D, 0.025),
-#             median= quantile(posterior.D, 0.5),
-#             upper = quantile(posterior.D, 0.975)
-#           )
-#         ),
-#         classical = list(
-#           all_values= D_classical$D.boot,
-#           summaries = list(
-#             lower = D_classical$D.estimate[1],
-#             median = D_classical$D.estimate[2],
-#             upper = D_classical$D.estimate[3]
-#           )
-#         )      
-#       )
-#       
-#       return(output)
-#     })
-#     
-# 
-# 
-# 
+
+
 
 num <- 0
 denom <- 0
@@ -135,7 +48,79 @@ shinyServer(function(input, output){
   ###############################################################################################
   #####  REACTIVE FUNCTIONS #####################################################################
   ###############################################################################################
+  summarise_posterior_distributions <- reactive ({
+    bayes <- generate_posterior_distribution()
+    classical <- calc_d_classical()
+    n_digits <- 4
+    
+    if (!is.null(bayes) & !is.null(classical)){
+      qi_bayes <- bayes %>% quantile(c(0.025, 0.5, 0.975)) %>% round(4)
+      qi_classical <- classical %>% quantile(c(0.025, 0.5, 0.975)) %>% round(4)
+      
+      out <- data.frame(
+        method=c("Classical", "Bayesian"),
+        lower=c(qi_classical[1], qi_bayes[1]),
+        middle=c(qi_classical[2], qi_bayes[2]),
+        upper=c(qi_classical[3], qi_bayes[3])
+      )
+      
+    } else {out <- NULL}
+    return(out)        
+  })
   
+  generate_posterior_distribution <- reactive({
+    model <- run_model()
+    dta <- combine_input_table()
+    K <- input$posterior_sample_size      
+    go <- input$generate_posterior_button
+    
+    if (go){
+      out <- array(NA, c(K))
+      for(k in 1:K){
+        p.current <- exp(
+          model$samples$phi[k ,] + model$samples$beta[k,1]
+        )   / (
+          1 + exp(
+            model$samples$phi[k ,] + model$samples$beta[k,1]
+          )
+        )
+        
+        p.current.overall <- sum(
+          p.current *dta$denominator
+        ) / sum(dta$denominator)
+        
+        out[k] <- sum(
+          dta$denominator * abs(p.current - p.current.overall)
+        ) / (
+          2 * sum(dta$denominator) * p.current.overall * (1-p.current.overall))                 
+      }
+      
+      
+    } else {out <- NULL}
+    return(out)
+  })
+  
+  run_model <- reactive({
+    
+    w <- generate_w_matrix()
+    dta <- combine_input_table()
+    go <- input$run_model_button
+    
+    
+    if (go & !is.null(w) & !is.null(dta)){
+      out <- iarCAR.re(
+        formula= numerator  ~ 1,
+        trials = dta$denominator,
+        W=w,
+        data=dta,
+        family="binomial"
+      )  
+      
+    } else {out <- NULL}
+    
+    return(out)
+    
+  })
   
   load_shapefiles <- reactive({
     go <- input$load_shapefile_button
@@ -215,7 +200,7 @@ shinyServer(function(input, output){
       
       
       data_raw <- load_data()
-      data_raw <- data_raw %>% select(datazone, type, count)
+      data_raw <- data_raw %>% dplyr::select(datazone, type, count)
       
       data_numerator <- data_raw %>% 
         filter(type %in% numerators) %>%
@@ -230,6 +215,16 @@ shinyServer(function(input, output){
       out <- data_out                  
     } else {out <- NULL}
 
+    return(out)
+  })
+  
+  calc_d_classical <- reactive({
+    dta <- combine_input_table()
+    out <- Dissimilarity.compute(
+      minority=dta$numerator,
+      total=dta$denominator
+      )
+    browser()    
     return(out)
   })
 
@@ -301,10 +296,7 @@ shinyServer(function(input, output){
       return(out)
     })
   
-#     output$table01 <- renderTable({
-#       out <- as.data.frame(output$numerator)
-#       return(out)
-#     })
+
 #   
 #     output$table02 <- renderTable({
 #       out <- as.data.frame(output$denominator)
