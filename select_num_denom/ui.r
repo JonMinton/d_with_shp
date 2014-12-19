@@ -26,7 +26,7 @@ shinyUI(fluidPage(
       br(),
       actionButton("load_shapefile_button", "click to load the shapefile"),
       br(),
-      actionButton("make_w_matrix_button", "click to generated the w matrix"),
+      actionButton("make_w_matrix_button", "click to generate the w matrix"),
       br(),
       actionButton("run_model_button", "click to run model"),
       br(),
@@ -42,7 +42,8 @@ shinyUI(fluidPage(
       tableOutput("table01"),
       textOutput("text02"),
       tableOutput("table02"),
-      textOutput("text03")
+      textOutput("text03"),
+      plotOutput("plot01")
       )
     )
     

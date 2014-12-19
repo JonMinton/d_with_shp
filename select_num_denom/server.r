@@ -1,6 +1,5 @@
 # Notes and to-dos
 
-# generate W matrix at start and load in
 
 
 # #####################################################################################################
@@ -75,7 +74,7 @@ shinyServer(function(input, output){
     go <- input$generate_posterior_button
     
     if (go){
-      out <- array(NA, c(K))
+      out <- array(NA, K)
       for(k in 1:K){
         p.current <- exp(
           model$samples$phi[k ,] + model$samples$beta[k,1]
@@ -107,7 +106,18 @@ shinyServer(function(input, output){
     go <- input$run_model_button
     
     
-    if (go & !is.null(w) & !is.null(dta)){
+    if (go & !is.null(w) & !is.null(dta)){      
+      w_dz <- rownames(w)
+      # remove duplicates
+      w <- w[!duplicated(w_dz), !duplicated(w_dz)]
+      w_dz <- rownames(w)
+      dta_dz <- dta$datazone
+      ss <- intersect(w_dz, dta_dz)
+      tmp <- w_dz %in% ss
+      w <- w[tmp, tmp]
+      dta <- subset(dta, datazone %in% ss)
+      
+      
       out <- iarCAR.re(
         formula= numerator  ~ 1,
         trials = dta$denominator,
@@ -175,6 +185,7 @@ shinyServer(function(input, output){
       if (!is.null(dta)){
         w_nb <- poly2nb(dta)
         out <- nb2mat(w_nb, style="B", zero.policy=TRUE)
+        rownames(out) <- colnames(out) <- dta@data$datazone        
       } else { out <- NULL}      
     } else {out <- NULL}
     return(out)
@@ -296,60 +307,13 @@ shinyServer(function(input, output){
       return(out)
     })
   
-
-#   
-#     output$table02 <- renderTable({
-#       out <- as.data.frame(output$denominator)
-#       return(out)
-#     })
-  
-#     
-#     output$denominator <- renderUI({
-#       input$action
-#       out <- isolate(load_selection(input$option))
-#       out <- as.vector(out$type)
-#       selectInput("sub_option_denom", "Select denominator", choices=out, multiple=T)
-#     })
-#     
-#     
-#     output$describe_num_and_denom <- renderText({
-#       numerator_info <- numerator_selection()
-#       cat("in describe_num_and_denom\n")
-#       browser()
-# 
-#     })
-    
-    
-#     output$out2 <- renderTable({
-#       tmp <- new_results()
-#       tmp2 <- as.character(length(tmp))
-#       paste("The length of the list returned is ", tmp2))
-#     })
-    
-    
-  })
-# # 
-# shinyServer(
-#   function(input, output){
-#     # INPUTS
-#     ## data_option
-#     this_selection <- reactive({
-#       input$data_option      
-#     })
-#       
-#     #these_results <- new_results()
-#     
-#     # OUTPUTS
-#     ## Table with quantiles
-#     ## histogram
-#     output$text <- renderText({
-#       h2(paste("The vignette is ", this_selection() ))      
-#     })
-#       
-#     output$plot <- renderPlot({
-#           plot(runif(1000))
-#         }
-#       )
-#   }
-# )
-
+    output$plot01 <- renderPlot({
+      samples <- generate_posterior_distribution() 
+      
+      if (!is.null(samples)){
+        out <- plot(density(samples))
+      } else {out <- NULL}
+      
+      return(out)
+    }) 
+})
