@@ -1,6 +1,9 @@
 # Notes and to-dos
 
+# Check the code in the posterior distribution generator section
 
+# Warning in dta$denominator * abs(p.current - p.current.overall) :
+#   longer object length is not a multiple of shorter object length
 
 # #####################################################################################################
 # 
@@ -33,10 +36,6 @@ sourceCpp("scripts/cppfunctions.cpp")
       #####################################################################################
       
       ## Run the Bayesian model
-
-
-
-
 
 num <- 0
 denom <- 0
