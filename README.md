@@ -15,7 +15,7 @@ I will assume that users will not use GitHub, but will be using RStudio.
 5. Find the file `d_with_shp.Rproj` inside the unzipped repository and select it. This should open up the project within Rstudio;
 6. In the file navigation pane (bottom right pane), go into the directory `select_num_denom` and click on either the file `ui.r` or `server.r`;
 7. The R script file should now open in the top left pane. On the top right corner of this pane there should be an option `Run App` - click on this. 
-8. The app should now be run!
+8. The app should now run!
 
 # Troubleshooting
 - Any errrors and warnings should appear on the bottom left pane of Rstudio. These will tell you if any packages are missing.
