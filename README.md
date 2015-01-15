@@ -1,6 +1,6 @@
-# d_with_shp
-~Jon Minton~
-~15 Jan 2015~
+# Dissimilarity Inference Toolkit
+~~Jon Minton~~
+~~15 Jan 2015~~
 
 # Introduction
 The purpose of this document is to help guide people wishing to use the app to download and set up the app on their own computer. 
