@@ -10,7 +10,7 @@ I will assume that users will not use GitHub, but will be using RStudio.
 # Process
 1. Install [R](http://cran.r-project.org/);
 2. Install [RStudio](http://www.rstudio.com/products/RStudio/);
-3. Select to download this repository as a zipped file (icon on right);
+3. Select to download this repository as a zipped file by clicking on the `Download Zip` icon on the right side of this website;
 4. Unzip the repository;
 5. Find the file `d_with_shp.Rproj` inside the unzipped repository and select it. This should open up the project within Rstudio;
 6. In the file navigation pane (bottom right pane), go into the directory `select_num_denom` and click on either the file `ui.r` or `server.r`;
