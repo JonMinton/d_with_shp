@@ -8,6 +8,6 @@ The purpose of this document is to help guide people wishing to use the app to d
 I will assume that users will not use GitHub, but will be using RStudio. 
 
 # Process
-1. Install !(R)[http://cran.r-project.org/]
-2. Install !(RStudio)[http://www.rstudio.com/products/RStudio/]
+1. Install ![R][http://cran.r-project.org/]
+2. Install ![RStudio][http://www.rstudio.com/products/RStudio/]
 
