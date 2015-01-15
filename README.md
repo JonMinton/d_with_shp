@@ -20,4 +20,5 @@ I will assume that users will not use GitHub, but will be using RStudio.
 # Troubleshooting
 - Any errrors and warnings should appear on the bottom left pane of Rstudio. These will tell you if any packages are missing.
 - To install a missing package, type `install.packages("PACKAGENAME")`, where `PACKAGENAME` is the name of the package (Note that R is case sensitive). 
+- The R console pane is the bottom left pane: type commands directly into this pane.
 
