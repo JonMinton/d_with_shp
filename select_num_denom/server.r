@@ -101,7 +101,7 @@ shinyServer(function(input, output){
       dta <- subset(dta, datazone %in% ss)
       
       
-      out <- iarCAR.re(
+      out <- S.CARiar(
         formula= numerator  ~ 1,
         trials = dta$denominator,
         W=w,
