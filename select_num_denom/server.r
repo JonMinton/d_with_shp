@@ -11,7 +11,7 @@
 library(Rcpp)
 
 # require(stringr)
-# require(ggplot2)
+ require(ggplot2)
  require(maptools)
 # require(grid)
  require(spdep)
@@ -286,11 +286,30 @@ shinyServer(function(input, output){
   
     output$plot01 <- renderPlot({
       samples <- generate_posterior_distribution() 
-      
+
       if (!is.null(samples)){
-        out <- plot(density(samples))
+        samples <- data.frame(value=samples)
+        out <- samples %>% ggplot( aes(x=value)) + geom_density()
+        out <- out + geom_vline(
+          xintercept=input$seg_k,
+          linetype="dotted"
+          )
       } else {out <- NULL}
-      
       return(out)
     }) 
+  output$text04 <- renderPlot({
+    samples <- generate_posterior_distribution() 
+    if (!is.null(samples)){
+      k_lower <- input$seg_k[1]
+      k_higher <- input$seg_k[2]
+      tmp <- length(which(samples > k_lower & samples < k_higher)) / length(samples)
+      tmp <- round(tmp, 2)
+      out <- paste("The probability that the true values falls within the thresholds is", tmp) 
+    } else {
+      out <- "The model has not yet been run."
+    }
+    return(out)
+  }) 
+  
+  
 })
