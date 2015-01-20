@@ -302,7 +302,8 @@ shinyServer(function(input, output){
     if (!is.null(samples)){
       k_lower <- input$seg_k[1]
       k_higher <- input$seg_k[2]
-      tmp <- length(which(samples > k_lower & samples < k_higher)) / length(samples)
+      tmp <- samples[samples > k_lower & samples < k_higher]
+      tmp <- length(tmp) / length(samples)
       tmp <- round(tmp, 2)
       out <- paste("The probability that the true values falls within the thresholds is", tmp) 
     } else {
