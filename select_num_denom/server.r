@@ -100,14 +100,26 @@ shinyServer(function(input, output){
       w <- w[tmp, tmp]
       dta <- subset(dta, datazone %in% ss)
       
-      
-      out <- S.CARiar(
+      #Adding try as workaround to issue that on some machines 
+      # S.CARiar works but on others iarCAR.re works, even 
+      # though the version of CARBayes reported is the same (4.0)
+      out <- try(S.CARiar(
         formula= numerator  ~ 1,
         trials = dta$denominator,
         W=w,
         data=dta,
         family="binomial"
-      )  
+      ))
+      if (class(out)=="try-error"){
+        out <- iarCAR.re(
+          formula= numerator  ~ 1,
+          trials = dta$denominator,
+          W=w,
+          data=dta,
+          family="binomial"          
+        )
+        
+      }
       
     } else {out <- NULL}
     
@@ -258,7 +270,7 @@ shinyServer(function(input, output){
     output$text02 <- renderText({
       dta <- link_shp_with_attributes() 
       if (is.null(dta)){
-        out <- "The data cannot be merged yet"
+        out <- "The data has not been merged yet"
       } else {
         out <- "the data have been merged"
       }
@@ -276,7 +288,7 @@ shinyServer(function(input, output){
     output$text03 <- renderText({
       tmp <- generate_w_matrix()
       if (is.null(tmp)){
-        out <- "The w matrix cannot be generated"
+        out <- "The w matrix has not been generated"
       } else {
         out <- paste("The w matrix has been generated and has dimensions", 
                      dim(tmp)[1], " by ", dim(tmp)[2])
@@ -296,8 +308,10 @@ shinyServer(function(input, output){
           )
       } else {out <- NULL}
       return(out)
-    }) 
-  output$text04 <- renderPlot({
+    })
+  
+  output$text04 <- renderText({
+    
     samples <- generate_posterior_distribution() 
     if (!is.null(samples)){
       k_lower <- input$seg_k[1]
