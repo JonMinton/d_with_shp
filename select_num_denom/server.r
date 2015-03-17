@@ -6,8 +6,6 @@
 #   longer object length is not a multiple of shorter object length
 
 # #####################################################################################################
-# 
-# require(reshape2)
 library(Rcpp)
 
 # require(stringr)
@@ -17,6 +15,8 @@ library(Rcpp)
  require(spdep)
  require(Rcpp)
 # require(MASS)
+require(plyr)
+require(tidyr)
  require(CARBayes)
 library(dplyr)
 # 
@@ -27,6 +27,16 @@ library(dplyr)
 source("scripts/D_compute.r")
 sourceCpp("scripts/cppfunctions.cpp")
 # 
+# find local authorities
+
+la_to_dz <- read.csv("data/la_to_dz.csv") 
+
+las <- la_to_dz %>%
+  group_by(local_authority) %>%
+  summarise %>%
+  .$local_authority %>%
+  as.vector
+
 
  
 
@@ -143,6 +153,14 @@ shinyServer(function(input, output){
   load_data <- reactive({
     file_name <- input$option
     data <- read.csv(paste0("data/", file_name, ".csv"))
+    if (input$option_la!=""){
+      dzs <-  la_to_dz  %>% 
+        filter(local_authority==input$option_la)  %>%
+        .$datazone %>%
+        as.vector
+      data <- data %>%
+        filter(datazone %in% dzs)
+    }
     return(data)
     })
     

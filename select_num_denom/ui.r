@@ -1,3 +1,13 @@
+la_to_dz <- read.csv("data/la_to_dz.csv") 
+
+las <- la_to_dz %>%
+  group_by(local_authority) %>%
+  summarise %>%
+  .$local_authority %>%
+  as.vector
+
+
+
 
 
 shinyUI(fluidPage(
@@ -16,6 +26,12 @@ shinyUI(fluidPage(
           "religion, 2011"="rel_2011",
           "ethnicity, 2011"="eg_2011" 
         ),
+        selected=""
+      ),
+      selectInput(
+        "option_la",
+        "Choose a Local Authority",
+        choices=las,
         selected=""
       ),
       
