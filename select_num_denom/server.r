@@ -320,10 +320,13 @@ shinyServer(function(input, output){
       if (!is.null(samples)){
         samples <- data.frame(value=samples)
         out <- samples %>% ggplot( aes(x=value)) + geom_density()
-        out <- out + geom_vline(
-          xintercept=input$seg_k,
-          linetype="dotted"
-          )
+        out <- out + 
+          geom_vline(
+            xintercept=input$seg_k,
+            linetype="dotted"
+          ) + 
+          coord_cartesian(xlim=c(0,1))
+        
       } else {out <- NULL}
       return(out)
     })
