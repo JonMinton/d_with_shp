@@ -13,6 +13,7 @@ require(Rcpp)
 require(MASS)
 require(CARBayes)
 require(shiny)
+require(dplyr)
 
 runApp("select_num_denom")
 # 
