@@ -1,17 +1,35 @@
+# Load prerequisites 
+
+require(reshape2)
+require(plyr)
+require(stringr)
+require(ggplot2)
+require(maptools)
+require(grid)
+require(spdep)
+require(Rcpp)
+require(MASS)
+require(CARBayes)
+require(shiny)
+require(dplyr)
+
+# Load data 
+
 la_to_dz <- read.csv("data/la_to_dz.csv") 
 
-las <- la_to_dz %>%
-  group_by(local_authority) %>%
-  summarise %>%
-  .$local_authority %>%
-  as.vector
-
+las <- c("all",
+         la_to_dz %>%
+          group_by(local_authority) %>%
+          summarise %>%
+          .$local_authority %>%
+          as.vector
+    )
 
 
 
 
 shinyUI(fluidPage(
-  titlePanel("Test"),
+  titlePanel("D inference app"),
   sidebarLayout(
     sidebarPanel(
       
@@ -41,26 +59,29 @@ shinyUI(fluidPage(
       br(),
       br(),
       actionButton("load_shapefile_button", "click to load the shapefile"),
-      br(),
-      actionButton("make_w_matrix_button", "click to generate the w matrix"),
-      br(),
-      actionButton("run_model_button", "click to run model"),
-      br(),
+       br(),
+       actionButton("make_w_matrix_button", "click to generate the w matrix"),
+
+      br(),br(),
       sliderInput("posterior_sample_size", "choose posterior sample size",
                   min=1000, max=10000, step=1000, value=1000),
-      actionButton("generate_posterior_button", "Click to generate posterior distribution"),
-      sliderInput("seg_k", "Choose segregation thresholds",
-                  min=0, max=1, value=c(0,1))
+      br(),
+      actionButton("generate_posterior_button", "click to run model"),
+      
+
+       sliderInput("seg_k", "Choose segregation thresholds",
+                   min=0, max=1, value=c(0,1))
       ),
     
     mainPanel(
-      textOutput("text01"),
-      tableOutput("table01"),
-      textOutput("text02"),
-      tableOutput("table02"),
-      textOutput("text03"),
-      plotOutput("plot01"),
-      textOutput("text04")
+      textOutput("report_shapefile_length"),
+      textOutput("report_w_matrix_generated"),
+      br(),
+      tableOutput("show_combined_input_table"),
+      tableOutput("report_attributes_linked"),
+      textOutput("report_posterior_generated"),
+      plotOutput("show_posterior_distribution"),
+      textOutput("report_posterior_generated")
       )
     )
     

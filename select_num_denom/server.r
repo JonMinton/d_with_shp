@@ -1,33 +1,39 @@
+
 # Notes and to-dos
 
-# Check the code in the posterior distribution generator section
 
-# Warning in dta$denominator * abs(p.current - p.current.overall) :
-#   longer object length is not a multiple of shorter object length
+# 1) include checks for if numerators are greater than denominators
+# 2) include feedback to tell user to wait when performing large calculations
+# 3) change order of US outputs to make more intuitive sense
+# 4) 
 
-# #####################################################################################################
-library(Rcpp)
+# server - load prerequisities --------------------------------------------
 
-# require(stringr)
- require(ggplot2)
- require(maptools)
-# require(grid)
- require(spdep)
- require(Rcpp)
-# require(MASS)
+require(reshape2)
 require(plyr)
-require(tidyr)
- require(CARBayes)
-library(dplyr)
-# 
-# 
-# ###################################################################################################
-# # scripts
-# source("scripts/functions/binomial_iar_car.r")
+require(stringr)
+require(ggplot2)
+require(maptools)
+require(grid)
+require(spdep)
+require(Rcpp)
+require(MASS)
+require(CARBayes)
+require(shiny)
+require(dplyr)
+
+
+
+ 
+
+# Server - load scripts  --------------------------------------------------
 source("scripts/D_compute.r")
 sourceCpp("scripts/cppfunctions.cpp")
 # 
-# find local authorities
+
+
+# server - load data  -----------------------------------------------------
+
 
 la_to_dz <- read.csv("data/la_to_dz.csv") 
 
@@ -42,111 +48,116 @@ las <- c("all",
       #####################################################################################
       #####################################################################################
 
-shinyServer(function(input, output, session){
+shinyServer(function(input, output){
   
   ###############################################################################################
   #####  Observer FUNCTIONS #####################################################################
   ###############################################################################################
-  run_model <- observe({
-    input$run_model_button # this is the trigger
+  run_model <- reactive(
+    {    
+      cat("entered run_model\n")
+      out <- NULL
+      w <- generate_w_matrix()
+      dta <- combine_input_table()
     
-    out <- NULL
-    input$run_model_button
-    
-    w <- generate_w_matrix()
-    dta <- combine_input_table()
-    
-    if (!is.null(w) & !is.null(dta)){      
-      w_dz <- rownames(w)
-      # remove duplicates
-      w <- w[!duplicated(w_dz), !duplicated(w_dz)]
-      w_dz <- rownames(w)
-      dta_dz <- dta$datazone
-      ss <- intersect(w_dz, dta_dz)
-      tmp <- w_dz %in% ss
-      w <- w[tmp, tmp]
-      dta <- subset(dta, datazone %in% ss)
-      
-      #Adding try as workaround to issue that on some machines 
-      # S.CARiar works but on others iarCAR.re works, even 
-      # though the version of CARBayes reported is the same (4.0)
-      out <- try(S.CARiar(
-        formula= numerator  ~ 1,
-        trials = dta$denominator,
-        W=w,
-        data=dta,
-        family="binomial"
-      ))
-      if (class(out)=="try-error"){
-        out <- iarCAR.re(
+      if (!is.null(w) & !is.null(dta)){      
+        w_dz <- rownames(w)
+        # remove duplicates
+        w <- w[!duplicated(w_dz), !duplicated(w_dz)]
+        w_dz <- rownames(w)
+        dta_dz <- dta$datazone
+        ss <- intersect(w_dz, dta_dz)
+        tmp <- w_dz %in% ss
+        w <- w[tmp, tmp]
+        dta <- subset(dta, datazone %in% ss)
+        
+        out <- S.CARiar(
           formula= numerator  ~ 1,
           trials = dta$denominator,
           W=w,
           data=dta,
-          family="binomial"          
-        )}
-    } 
-    return(out)
+          family="binomial"
+        )
+      }
+      return(out)
   })
-  
-  generate_posterior_distribution <- observe({
-    input$generate_posterior_button # this is the trigger
-    
-    model <- run_model()
-    dta <- combine_input_table()
-    K <- input$posterior_sample_size      
-    
-    out <- array(NA, K)
-    for(k in 1:K){
-      p.current <- exp(model$samples$phi[k ,] + model$samples$beta[k,1])   / (1 + exp(model$samples$phi[k ,] + model$samples$beta[k,1]))
-      p.current.overall <- sum(p.current *dta$denominator) / sum(dta$denominator)
-      out[k] <- sum(dta$denominator * abs(p.current - p.current.overall)) / ( 2 * sum(dta$denominator) * p.current.overall * (1-p.current.overall))                 
-    }
-    return(out)
-  })
-  
-  
-  summarise_posterior_distributions <- observe ({
-    input$generate_posterior_button # this is the trigger
-    
-    
-    bayes <- generate_posterior_distribution()
-    classical <- calc_d_classical()
-    n_digits <- 4
-    
-    if (!is.null(bayes) & !is.null(classical)){
-      qi_bayes <- bayes %>% quantile(c(0.025, 0.5, 0.975)) %>% round(4)
-      qi_classical <- classical %>% quantile(c(0.025, 0.5, 0.975)) %>% round(4)
+   
+  generate_posterior_distribution <- eventReactive(
+    input$generate_posterior_button,
+    {
+      cat("entered generate_posterior_distribution function\n")
+      model <- run_model()
+      cat("returned to generate_posterior_distribution. Browsing\n")
+      browser()
       
-      out <- data.frame(
-        method=c("Classical", "Bayesian"),
-        lower=c(qi_classical[1], qi_bayes[1]),
-        middle=c(qi_classical[2], qi_bayes[2]),
-        upper=c(qi_classical[3], qi_bayes[3])
-      )
+      dta <- combine_input_table()
+      K <- input$posterior_sample_size      
       
-    } else {out <- NULL}
-    return(out)        
+      out <- array(NA, K)
+      for(k in 1:K){
+        p.current <- exp(model$samples$phi[k ,] + model$samples$beta[k,1])   / (1 + exp(model$samples$phi[k ,] + model$samples$beta[k,1]))
+        p.current.overall <- sum(p.current *dta$denominator) / sum(dta$denominator)
+        out[k] <- sum(dta$denominator * abs(p.current - p.current.overall)) / ( 2 * sum(dta$denominator) * p.current.overall * (1-p.current.overall))                 
+      }
+      return(out)
   })
   
   
-  
-  
-  load_shapefiles <- observe({
-    input$load_shapefile_button # this is the trigger
-     
-    out <- readShapeSpatial(
-      "shp/scotland_2001_datazones/scotland_dz_2001.shp"
-    )      
-    out@data <- rename(out@data, datazone=zonecode)
+  summarise_posterior_distributions <- eventReactive (
+    input$generate_posterior_button,
+    {
+      cat("entered summarise_posterior_distributions function\n")
+      bayes <- generate_posterior_distribution()
+      classical <- calc_d_classical()
+      n_digits <- 4
+      
+      if (!is.null(bayes) & !is.null(classical)){
+        qi_bayes <- bayes %>% quantile(c(0.025, 0.5, 0.975)) %>% round(4)
+        qi_classical <- classical %>% quantile(c(0.025, 0.5, 0.975)) %>% round(4)
         
-    return(out)
+        out <- data.frame(
+          method=c("Classical", "Bayesian"),
+          lower=c(qi_classical[1], qi_bayes[1]),
+          middle=c(qi_classical[2], qi_bayes[2]),
+          upper=c(qi_classical[3], qi_bayes[3])
+        )
+        
+      } else {out <- NULL}
+      return(out)        
+  })
+  
+  
+  load_shapefiles <- eventReactive(
+    input$load_shapefile_button, 
+    {
+     
+      out <- readShapeSpatial(
+        "shp/scotland_2001_datazones/scotland_dz_2001.shp"
+      )      
+      out@data <- rename(out@data, datazone=zonecode)
+          
+      return(out)
+  })
+
+  link_shp_with_attributes <- reactive({
+      shp_data <- load_shapefiles()    
+      att_data <- combine_input_table()
+      
+      if (!is.null(shp_data) & !is.null(att_data)){
+        out <- shp_data
+        # The data can be loaded
+        out@data <- plyr::join(out@data, att_data)
+      } else {
+        # The data cannot be linked
+        out <- NULL
+      }
+      return(out)
   })
   
   load_data <- reactive({
     file_name <- input$option
     data <- read.csv(paste0("data/", file_name, ".csv"))
-    if (input$option_la!=""){
+    if (input$option_la!="all"){
       dzs <-  la_to_dz  %>% 
         filter(local_authority==input$option_la)  %>%
         .$datazone %>%
@@ -169,65 +180,52 @@ shinyServer(function(input, output, session){
     return(labels)
   })
   
-  link_shp_with_attributes <- reactive({
-    shp_data <- load_shapefiles()    
-    att_data <- combine_input_table()
-    
-    if (!is.null(shp_data) & !is.null(att_data)){
-      out <- shp_data
-      # The data can be loaded
-      out@data <- plyr::join(out@data, att_data)
-    } else {
-      # The data cannot be linked
+
+  
+  generate_w_matrix <- eventReactive(
+    input$make_w_matrix_button, 
+    {
       out <- NULL
-    }
-    return(out)
+      dta <- link_shp_with_attributes()
+      if (!is.null(dta)){
+        w_nb <- poly2nb(dta)
+        out <- nb2mat(w_nb, style="B", zero.policy=TRUE)
+        rownames(out) <- colnames(out) <- dta@data$datazone        
+        }  
+      return(out)
   })
   
-  generate_w_matrix <- observe({
-    input$make_w_matrix_button # this is the trigger
-    
-    out <- NULL
-    dta <- link_shp_with_attributes()
-    if (!is.null(dta)){
-      w_nb <- poly2nb(dta)
-      out <- nb2mat(w_nb, style="B", zero.policy=TRUE)
-      rownames(out) <- colnames(out) <- dta@data$datazone        
-      }  
-    return(out)
-  })
-  
-  combine_input_table <- observe({
-    input$ok_num_denom # this is the trigger
-    
-    numerators <- isolate(input$numerator_selection)
-    denominators <- isolate(input$denominator_selection)
-    if (!is.null(numerators) & !is.null(denominators)){
-      cat("numerators: ")
-      for (i in 1:length(numerators)) {cat(numerators[i], "\n")}
-      cat("\n\n")
-      
-      cat("denominators: ")
-      for (i in 1:length(denominators)) {cat(denominators[i], "\n")}
-      cat("\n\n")
-    
+  combine_input_table <- eventReactive(
+    input$ok_num_denom,
+    {
         
-      data_raw <- load_data()
-      data_raw <- data_raw %>% dplyr::select(datazone, type, count)
+      numerators <- input$numerator_selection
+      denominators <- input$denominator_selection
+      if (!is.null(numerators) & !is.null(denominators)){
+        cat("numerators: ")
+        for (i in 1:length(numerators)) {cat(numerators[i], "\n")}
+        cat("\n\n")  
+        cat("denominators: ")
+        for (i in 1:length(denominators)) {cat(denominators[i], "\n")}
+        cat("\n\n")      
+
+        data_raw <- load_data()
+        data_raw <- data_raw %>% dplyr::select(datazone, type, count)
         
-      data_numerator <- data_raw %>% 
-        filter(type %in% numerators) %>%
-        group_by(datazone) %>% summarise(numerator=sum(count))
+        data_numerator <- data_raw %>% 
+          filter(type %in% numerators) %>%
+          group_by(datazone) %>% summarise(numerator=sum(count))
         
-      data_denominator <- data_raw %>% 
-        filter(type %in% denominators) %>%
-        group_by(datazone) %>% summarise(denominator=sum(count))
+        data_denominator <- data_raw %>% 
+          filter(type %in% denominators) %>%
+          group_by(datazone) %>% summarise(denominator=sum(count))
                 
-      data_out <- inner_join(data_denominator, data_numerator)
-      out <- data_out                  
-      } 
-    return(out)
+        data_out <- inner_join(data_denominator, data_numerator)
+        out <- data_out                  
+        } 
+      return(out)
   })
+
   
   calc_d_classical <- reactive({
     dta <- combine_input_table()
@@ -242,6 +240,8 @@ shinyServer(function(input, output, session){
   ### REACTIVE UIS ############################################################################
   #############################################################################################
     output$numerator <- renderUI({
+      cat("in server:numerator\n")
+      browser()
       selections <- get_labels()
       selectInput("numerator_selection", "Select numerator", choices=selections, multiple=T)
     })
@@ -255,7 +255,7 @@ shinyServer(function(input, output, session){
   ##############################################################################################
   ### OUTPUTS ##################################################################################
   ##############################################################################################
-    output$text01 <- renderText({
+    output$report_shapefile_length <- renderText({
       shapefiles <- load_shapefiles()
       if (is.null(shapefiles)){
         out <- "Shapefiles not yet loaded"
@@ -266,14 +266,14 @@ shinyServer(function(input, output, session){
     })
   
   
-    output$table01 <- renderTable({
+    output$show_combined_input_table <- renderTable({
       out <- combine_input_table() %>%
         as.data.frame %>%
         head
       return(out)
     })
   
-    output$text02 <- renderText({
+    output$report_attributes_linked <- renderText({
       dta <- link_shp_with_attributes() 
       if (is.null(dta)){
         out <- "The data has not been merged yet"
@@ -291,7 +291,8 @@ shinyServer(function(input, output, session){
       return(out)
     })
   
-    output$text03 <- renderText({
+    output$report_w_matrix_generated <- renderText({
+      cat("Entered report_w_matrix_generated\n")
       tmp <- generate_w_matrix()
       if (is.null(tmp)){
         out <- "The w matrix has not been generated"
@@ -302,7 +303,7 @@ shinyServer(function(input, output, session){
       return(out)
     })
   
-    output$plot01 <- renderPlot({
+    output$show_posterior_distribution <- renderPlot({
       samples <- generate_posterior_distribution() 
 
       if (!is.null(samples)){
@@ -320,7 +321,7 @@ shinyServer(function(input, output, session){
       return(out)
     })
   
-  output$text04 <- renderText({
+  output$report_posterior_generated <- renderText({
     
     samples <- generate_posterior_distribution() 
     if (!is.null(samples)){
