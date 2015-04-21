@@ -214,19 +214,3 @@ runApp("select_num_denom")
 # results <- list(results1, results2)
 # names(results) <- c("True value of D", "Estimated values of D")
 # results     
-
-
-####
-
-rm(list=ls())
-
-
-require(plyr)
-require(tidyr)
-require(dplyr)
-
-link <- read.csv("data/au_to_dz.csv") %>%
-  tbl_df
-link %>%
-  group_by(local_authority) %>%
-  summarise

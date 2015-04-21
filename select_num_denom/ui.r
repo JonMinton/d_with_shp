@@ -50,9 +50,8 @@ shinyUI(fluidPage(
         "option_la",
         "Choose a Local Authority",
         choices=las,
-        selected=""
+        selected="all"
       ),
-      
       uiOutput("numerator"),
       uiOutput("denominator"),
       actionButton("ok_num_denom", "compile selection"),
@@ -60,7 +59,7 @@ shinyUI(fluidPage(
       br(),
       actionButton("load_shapefile_button", "click to load the shapefile"),
        br(),
-       actionButton("make_w_matrix_button", "click to generate the w matrix"),
+       actionButton("make_w_matrix_button", "click to generate the neighbourhood matrix"),
 
       br(),br(),
       sliderInput("posterior_sample_size", "choose posterior sample size",
@@ -74,14 +73,33 @@ shinyUI(fluidPage(
       ),
     
     mainPanel(
-      textOutput("report_shapefile_length"),
-      textOutput("report_w_matrix_generated"),
+      h1("Set up"),
+      p("Before the model can be run, a number of sources of data need to be "),
+      p("loaded and checked. First the data, in terms of areal units, numerators"),
+      p(" and denominators, needs to be selected. Then the shapefiles need to be"),
+      p("loaded. And then the neigbourhood matrix needs to be calculated, and the"),
+      p("attribute data needs to be merged to the shapefiles."),
       br(),
+      p("This app will guide you through the process of setting up the prerequisites"),
+      p("and help you to better identify the causes of any bugs"),
+      br(), br(),
+      p("<b>First</b>, click to load the shapefile. Once loaded the length will appear below: "),
+      textOutput("report_shapefile_length"),
+      p("<b>Second</b>, click to load the neighbourhood matrix: "),
+      textOutput("report_w_matrix_generated"),
+      p("<b>Third</b>, after selecting the numerators and denominators, combine the data:"),
+
       tableOutput("show_combined_input_table"),
       tableOutput("report_attributes_linked"),
+      br(),
+      hr(),
+      h1("Analysis"),
+      h2("report if posterior generated"),
       textOutput("report_posterior_generated"),
+      h2("show plot"),
       plotOutput("show_posterior_distribution"),
-      textOutput("report_posterior_generated")
+      tableOutput("tabulate_posterior")
+
       )
     )
     

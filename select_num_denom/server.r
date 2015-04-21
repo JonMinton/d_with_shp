@@ -48,7 +48,7 @@ las <- c("all",
       #####################################################################################
       #####################################################################################
 
-shinyServer(function(input, output){
+shinyServer(function(input, output, server){
   
   ###############################################################################################
   #####  Observer FUNCTIONS #####################################################################
@@ -60,7 +60,8 @@ shinyServer(function(input, output){
       w <- generate_w_matrix()
       dta <- combine_input_table()
     
-      if (!is.null(w) & !is.null(dta)){      
+      if (!is.null(w) & !is.null(dta)){     
+        cat("in inner of run_model\n")
         w_dz <- rownames(w)
         # remove duplicates
         w <- w[!duplicated(w_dz), !duplicated(w_dz)]
@@ -71,13 +72,19 @@ shinyServer(function(input, output){
         w <- w[tmp, tmp]
         dta <- subset(dta, datazone %in% ss)
         
-        out <- S.CARiar(
+        mdl <- S.CARiar(
           formula= numerator  ~ 1,
           trials = dta$denominator,
           W=w,
           data=dta,
           family="binomial"
         )
+        out <- list(
+          datazones = dta_dz,
+          denominator = dta$denominator,
+          beta = mdl$samples$beta[,1],
+          phi = mdl$samples$phi
+          )
       }
       return(out)
   })
@@ -86,18 +93,20 @@ shinyServer(function(input, output){
     input$generate_posterior_button,
     {
       cat("entered generate_posterior_distribution function\n")
-      model <- run_model()
+      model_outputs <- run_model()
       cat("returned to generate_posterior_distribution. Browsing\n")
-      browser()
       
-      dta <- combine_input_table()
       K <- input$posterior_sample_size      
+      phi <- model_outputs$phi
+      beta <- model_outputs$beta
+      denominator <- model_outputs$denominator
       
       out <- array(NA, K)
       for(k in 1:K){
-        p.current <- exp(model$samples$phi[k ,] + model$samples$beta[k,1])   / (1 + exp(model$samples$phi[k ,] + model$samples$beta[k,1]))
-        p.current.overall <- sum(p.current *dta$denominator) / sum(dta$denominator)
-        out[k] <- sum(dta$denominator * abs(p.current - p.current.overall)) / ( 2 * sum(dta$denominator) * p.current.overall * (1-p.current.overall))                 
+        p.current <- exp(phi[k ,] + beta[k])   / (1 + exp(phi[k ,] + beta[k]))
+        p.current.overall <- sum(p.current * denominator) / sum(denominator)
+        out[k] <- sum(denominator * abs(p.current - p.current.overall)) / 
+          ( 2 * sum(denominator) * p.current.overall * (1-p.current.overall))                 
       }
       return(out)
   })
@@ -108,7 +117,7 @@ shinyServer(function(input, output){
     {
       cat("entered summarise_posterior_distributions function\n")
       bayes <- generate_posterior_distribution()
-      classical <- calc_d_classical()
+      classical <- calc_d_classical()$D.boot
       n_digits <- 4
       
       if (!is.null(bayes) & !is.null(classical)){
@@ -176,6 +185,7 @@ shinyServer(function(input, output){
   })
   
   get_labels <- reactive({
+    cat("Entered server:get_labels\n")
     labels <- levels(load_data()$type) %>% as.character() %>% sort()
     return(labels)
   })
@@ -241,12 +251,13 @@ shinyServer(function(input, output){
   #############################################################################################
     output$numerator <- renderUI({
       cat("in server:numerator\n")
-      browser()
+
       selections <- get_labels()
       selectInput("numerator_selection", "Select numerator", choices=selections, multiple=T)
     })
   
     output$denominator <- renderUI({
+      cat("in server:denominator\n")
       selections <- get_labels()
       selectInput("denominator_selection", "select denominator", choices=selections, multiple=T)
     })
@@ -283,13 +294,6 @@ shinyServer(function(input, output){
       return(out)
     })
   
-    output$table02 <- renderTable({
-      dta <- link_shp_with_attributes()
-      if (!is.null(dta)){
-        out <- head(dta@data)        
-      } else {out <- NULL}
-      return(out)
-    })
   
     output$report_w_matrix_generated <- renderText({
       cat("Entered report_w_matrix_generated\n")
@@ -308,32 +312,32 @@ shinyServer(function(input, output){
 
       if (!is.null(samples)){
         samples <- data.frame(value=samples)
-        out <- samples %>% ggplot( aes(x=value)) + 
-          geom_density +
+        thresholds <- input$seg_k
+        samples$filled <- "yes"
+        samples$filled[samples$value <= thresholds[1] | samples$value >= thresholds[2]] <- "no"
+        prop_in_band <- length(samples$filled[samples$filled=="yes"])/length(samples$filled) %>%
+          round(., 2)
+        
+        out <- samples %>% ggplot(data=., aes(x=value, fill=filled)) + 
+          geom_histogram(binwidth=0.01) +
+          scale_fill_manual(values=c("yes"="black", "no"= "lightgray"), guide=FALSE) +
           geom_vline(
-            xintercept=isolate(input$seg_k),
+            xintercept=thresholds,
             linetype="dotted",
             linewidth=2.5
             ) + 
-          coord_cartesian(xlim=c(0,1))
-          
+          coord_cartesian(xlim=c(0,1)) +
+          annotate("text", x=mean(thresholds), y=-1, col="red", fontface="bold", label=prop_in_band)
+                  
       } else {out <- NULL}
       return(out)
     })
   
-  output$report_posterior_generated <- renderText({
-    
-    samples <- generate_posterior_distribution() 
-    if (!is.null(samples)){
-      k_lower <- isolate(input$seg_k[1])
-      k_higher <- isolate(input$seg_k[2])
-      tmp <- samples[samples > k_lower & samples < k_higher]
-      tmp <- length(tmp) / length(samples)
-      tmp <- round(tmp, 2)
-      out <- paste("The probability that the true values falls within the thresholds is", tmp) 
-    } else {
-      out <- "The model has not yet been run."
-    }
-    return(out)
-  }) 
-})
+    output$tabulate_posterior <- renderTable({
+      out <- summarise_posterior_distributions()
+      
+      return(out)
+      
+    })
+  
+ })
