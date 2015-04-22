@@ -211,6 +211,7 @@ shinyServer(function(input, output, server){
         
       numerators <- input$numerator_selection
       denominators <- input$denominator_selection
+      out <- NULL
       if (!is.null(numerators) & !is.null(denominators)){
         cat("numerators: ")
         for (i in 1:length(numerators)) {cat(numerators[i], "\n")}
@@ -266,15 +267,7 @@ shinyServer(function(input, output, server){
   ##############################################################################################
   ### OUTPUTS ##################################################################################
   ##############################################################################################
-    output$report_shapefile_length <- renderText({
-      shapefiles <- load_shapefiles()
-      if (is.null(shapefiles)){
-        out <- "Shapefiles not yet loaded"
-      } else {
-        out <- paste("The length of the shapefile object is ", length(shapefiles))
-      }
-      return(out)
-    })
+
   
   
     output$show_combined_input_table <- renderTable({
@@ -292,6 +285,76 @@ shinyServer(function(input, output, server){
         out <- "the data have been merged"
       }
       return(out)
+    })
+  
+    output$all_checks <- renderUI({
+      # This will replace a number of other renderText functions, creating a 
+      # single dynamic paragraph that will report on the state of various 
+      # prerequisites.
+      
+      # The structure of the output will read
+      
+      # (1)"The numerator and denominator [have/have not] been selected"
+      # (2)"[The numerator and denominator selection is valid as no numerators are greater
+      # than their denominators] / 
+      # [The numerator and denominator selection is not valid because 
+      # [[XXX]] numerators are greater than their denominators. Please choose again.]"
+      # (3) "The numerators/denominators [have/have not] been merged to the shapefiles."
+      # (4) "The shapefile [has/has not] been loaded"
+      # (5)"[The shapefile is needed to calculate the neighbourhood matrix]/
+      # [The shapefile has been loaded but the neighbourhood matrix has not yet been calculated]/
+      # [The neighbourhood matrix has been calculated]
+      # (6)"[All areal units are included. Warning: This may take some time"] /
+      # [Only one local authority has been selected]
+      # (7) [The model [has not]/[has] been run"
+      
+      # (1)"The numerator and denominator [have/have not] been selected"
+      tmp <- combine_input_table()
+      out_01 <- if (is.null(tmp)){
+        return("The numerator and denominator have not been selected")
+      } else {
+        return(
+          paste(
+            "The numerator and denominator have been selected and",
+            "has", dim(tmp)[1], "rows")
+          )
+      }
+      # (2)"[The numerator and denominator selection is valid as no numerators are greater
+      # than their denominators] / 
+      tmp2 <- tmp$denominator - tmp$numerator
+      out_02 <- if (any(tmp2 < 0)){
+          return(
+            paste(
+              "The numerator/denominator selection is invalid as",
+              length(tmp2[tmp2 < 0]), "numerators are greater than",
+              "the corresponding denominators. <strong>Please choose again</strong>"
+              )
+            )
+        } else {
+          return(
+            paste("The numerator/denominator selection is valid as",
+                 "no denominators are smaller than the corresponding",
+                  "numerators"
+                 )
+          )
+        }
+      # (3) "[The shapefile has not been loaded]/
+      # [The shapefile has been loaded and has length [[XXX]]"
+      tmp3 <- load_shapefiles()
+      
+      
+      out_03 <- if (is.null(shapefiles)){
+          return("Shapefiles not yet loaded")
+        } else {
+          return(
+            paste(
+              "The shapefiles have been loaded and have length", length(tmp3)
+            )
+          )
+        }
+      
+      
+      return(HTML(paste(out_01, out_02, out_03, sep='<br/>')))
     })
   
   
