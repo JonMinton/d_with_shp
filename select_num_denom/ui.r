@@ -74,10 +74,14 @@ shinyUI(fluidPage(
     
     mainPanel(
       h1("Checks"),
+      p(
+        "This secton shows some outputs that allow you to see whether the ",
+        "prerequisites required by the model have been loaded successfully"
+      ),
       htmlOutput("all_checks"),
 
       textOutput("report_w_matrix_generated"),
-      p("<b>Third</b>, after selecting the numerators and denominators, combine the data:"),
+      HTML("<p><b>Third</b>, after selecting the numerators and denominators, combine the data:</p>"),
 
       tableOutput("show_combined_input_table"),
       tableOutput("report_attributes_linked"),

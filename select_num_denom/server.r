@@ -354,7 +354,15 @@ shinyServer(function(input, output, server){
         }
       
       
-      return(HTML(paste(out_01, out_02, out_03, sep='<br/>')))
+      return(HTML(
+        paste(
+          "<p>Data report:</p>",
+          "<ul>",
+            "<li>", out_01, "</li>",
+            "<li>", out_02, "</li>",
+            "<li>", out_03, "</li>",
+          "</ul>"
+        )
     })
   
   
