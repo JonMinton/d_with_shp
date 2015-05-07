@@ -21,10 +21,11 @@ rm(list=ls())
 # 
 
 require(plyr)
+require(stringr)
+require(tidyr)
 require(dplyr)
 require(repmis)
 require(ggplot2)
-require(tidyr)
 
 
 ###############
@@ -150,13 +151,21 @@ rel_2001 <- rel_2001 %>%
 
 
 rel_2001 <- rel_2001 %>% group_by(datazone, year, type) %>% 
-  summarise(count=sum(count))
+  summarise(count=sum(count)) %>%
+  select(datazone, year, type, count)
 
 coo_2001 <- coo_2001 %>% group_by(datazone, year, type) %>%
-  summarise(count = sum(count))
+  summarise(count = sum(count)) %>%
+  select(datazone, year, type, count)
 
 eg_2001 <- eg_2001 %>% group_by(datazone, year, type) %>%
-  summarise(count = sum(count))
+  summarise(count = sum(count)) %>%
+  select(datazone, year, type, count)
+
+# Ethnic group counts do not add up correctly as categories on gaelic included
+
+eg_2001 <- eg_2001 %>%
+  filter(type!="gaelic_speaker_and_born_in_scotland" & type !="gaelic_speaker_and_not_born_in_scotland")
 
 
 ######################################################################
@@ -200,21 +209,43 @@ eg_2011 <- eg_2011 %>% rename(datazone=x) %>%
     type,
     count,
     -datazone
-    ) %>% mutate(year=2011)
+    ) %>% mutate(year=2011) %>%
+  mutate(
+    count=str_replace(count, "-", "0"),
+    count=str_replace(count, ",", ""),
+    count=as.numeric(as.character(count))
+    ) %>%
+  select(datazone, year, type, count)
+
+
 coo_2011 <- coo_2011 %>% rename(datazone=x) %>%
   filter(datazone!="S92000003") %>% 
   gather(
     type,
     count,
     -datazone
-  ) %>% mutate(year=2011)
+  ) %>% mutate(year=2011) %>%
+  mutate(
+    count=str_replace(count, "-", "0"),
+    count=str_replace(count, ",", ""),
+    count=as.numeric(as.character(count))
+  ) %>%
+  select(datazone, year, type, count)
+
+
 rel_2011 <- rel_2011 %>% rename(datazone=x) %>%
   filter(datazone!="S92000003") %>% 
   gather(
     type,
     count,
     -datazone
-  ) %>% mutate(year=2011)
+  ) %>% mutate(year=2011) %>%
+  mutate(
+    count=str_replace(count, "-", "0"),
+    count=str_replace(count, ",", ""),
+    count=as.numeric(as.character(count))
+  ) %>%
+  select(datazone, year, type, count)
 
 
 
@@ -222,31 +253,37 @@ rel_2011 <- rel_2011 %>% rename(datazone=x) %>%
 
 write.csv(
   coo_2001,
-  "data/coo_2001.csv"
+  "data/coo_2001.csv",
+  row.names=FALSE
   )
 
 write.csv(
   rel_2001,
-  "data/rel_2001.csv"
+  "data/rel_2001.csv",
+  row.names=FALSE
 )
 
 write.csv(
   eg_2001,
-  "data/eg_2001.csv"
+  "data/eg_2001.csv",
+  row.names=FALSE
 )
 
 
 write.csv(
   coo_2011,
-  "data/coo_2011.csv"
+  "data/coo_2011.csv",
+  row.names=FALSE
 )
 
 write.csv(
   rel_2011,
-  "data/rel_2011.csv"
+  "data/rel_2011.csv",
+  row.names=FALSE
 )
 
 write.csv(
   eg_2011,
-  "data/eg_2011.csv"
+  "data/eg_2011.csv",
+  row.names=FALSE
 )

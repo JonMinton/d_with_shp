@@ -55,7 +55,7 @@ shinyServer(function(input, output, server){
   ###############################################################################################
   run_model <- reactive(
     {    
-      cat("entered run_model\n")
+      cat("run_model\n")
       out <- NULL
       w <- generate_w_matrix()
       dta <- combine_input_table()
@@ -92,9 +92,8 @@ shinyServer(function(input, output, server){
   generate_posterior_distribution <- eventReactive(
     input$generate_posterior_button,
     {
-      cat("entered generate_posterior_distribution function\n")
+      cat("generate_posterior_distribution\n")
       model_outputs <- run_model()
-      cat("returned to generate_posterior_distribution. Browsing\n")
       
       K <- input$posterior_sample_size      
       phi <- model_outputs$phi
@@ -115,7 +114,7 @@ shinyServer(function(input, output, server){
   summarise_posterior_distributions <- eventReactive (
     input$generate_posterior_button,
     {
-      cat("entered summarise_posterior_distributions function\n")
+      cat("summarise_posterior_distribution\n")
       bayes <- generate_posterior_distribution()
       classical <- calc_d_classical()$D.boot
       n_digits <- 4
@@ -139,7 +138,7 @@ shinyServer(function(input, output, server){
   load_shapefiles <- eventReactive(
     input$load_shapefile_button, 
     {
-     
+      cat("load_shapefiles\n")
       out <- readShapeSpatial(
         "shp/scotland_2001_datazones/scotland_dz_2001.shp"
       )      
@@ -149,6 +148,8 @@ shinyServer(function(input, output, server){
   })
 
   link_shp_with_attributes <- reactive({
+    cat("link_shp_with_attributes\n")
+    
       shp_data <- load_shapefiles()    
       att_data <- combine_input_table()
       
@@ -164,6 +165,7 @@ shinyServer(function(input, output, server){
   })
   
   load_data <- reactive({
+    cat("load_data\n")    
     file_name <- input$option
     data <- read.csv(paste0("data/", file_name, ".csv"))
     if (input$option_la!="all"){
@@ -178,6 +180,7 @@ shinyServer(function(input, output, server){
     })
     
   summarise_data <- reactive({
+    cat("summarise\n")    
     data <- load_data()
     out <- data %>% group_by(type) %>% summarise(count=sum(count))
     out <- data.frame(out)
@@ -185,7 +188,7 @@ shinyServer(function(input, output, server){
   })
   
   get_labels <- reactive({
-    cat("Entered server:get_labels\n")
+    cat("get_labels\n")
     labels <- levels(load_data()$type) %>% as.character() %>% sort()
     return(labels)
   })
@@ -195,6 +198,7 @@ shinyServer(function(input, output, server){
   generate_w_matrix <- eventReactive(
     input$make_w_matrix_button, 
     {
+      cat("generate_w_matrix\n")
       out <- NULL
       dta <- link_shp_with_attributes()
       if (!is.null(dta)){
@@ -208,7 +212,8 @@ shinyServer(function(input, output, server){
   combine_input_table <- eventReactive(
     input$ok_num_denom,
     {
-        
+      cat("combine_input_table\n")
+      
       numerators <- input$numerator_selection
       denominators <- input$denominator_selection
       out <- NULL
@@ -239,6 +244,7 @@ shinyServer(function(input, output, server){
 
   
   calc_d_classical <- reactive({
+    cat("calc_d_classical\n")    
     dta <- combine_input_table()
     out <- Dissimilarity.compute(
       minority=dta$numerator,
@@ -251,14 +257,13 @@ shinyServer(function(input, output, server){
   ### REACTIVE UIS ############################################################################
   #############################################################################################
     output$numerator <- renderUI({
-      cat("in server:numerator\n")
-
+      cat("output:numerator\n")
       selections <- get_labels()
       selectInput("numerator_selection", "Select numerator", choices=selections, multiple=T)
     })
   
     output$denominator <- renderUI({
-      cat("in server:denominator\n")
+      cat("output:denominator\n")
       selections <- get_labels()
       selectInput("denominator_selection", "select denominator", choices=selections, multiple=T)
     })
@@ -271,6 +276,7 @@ shinyServer(function(input, output, server){
   
   
     output$show_combined_input_table <- renderTable({
+      cat("output:show_combined_input_table\n")      
       out <- combine_input_table() %>%
         as.data.frame %>%
         head
@@ -278,6 +284,7 @@ shinyServer(function(input, output, server){
     })
   
     output$report_attributes_linked <- renderText({
+      cat("output:report_attributes_linked\n")      
       dta <- link_shp_with_attributes() 
       if (is.null(dta)){
         out <- "The data has not been merged yet"
@@ -288,6 +295,8 @@ shinyServer(function(input, output, server){
     })
   
     output$all_checks <- renderUI({
+      cat("output:all_checks\n")
+      
       # This will replace a number of other renderText functions, creating a 
       # single dynamic paragraph that will report on the state of various 
       # prerequisites.
@@ -363,11 +372,12 @@ shinyServer(function(input, output, server){
             "<li>", out_03, "</li>",
           "</ul>"
         )
+      ))
     })
   
   
     output$report_w_matrix_generated <- renderText({
-      cat("Entered report_w_matrix_generated\n")
+      cat("output:report_w_matrix_generated\n")
       tmp <- generate_w_matrix()
       if (is.null(tmp)){
         out <- "The w matrix has not been generated"
@@ -379,6 +389,7 @@ shinyServer(function(input, output, server){
     })
   
     output$show_posterior_distribution <- renderPlot({
+      cat("output:show_posterior_distribution\n")      
       samples <- generate_posterior_distribution() 
 
       if (!is.null(samples)){
@@ -405,6 +416,8 @@ shinyServer(function(input, output, server){
     })
   
     output$tabulate_posterior <- renderTable({
+      cat("output:tabulate_posterior\n")
+      
       out <- summarise_posterior_distributions()
       
       return(out)
