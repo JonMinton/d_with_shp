@@ -31,8 +31,11 @@ las <- c("all",
 shinyUI(fluidPage(
   titlePanel("D inference app"),
   sidebarLayout(
+    
     sidebarPanel(
-      
+      #  This section contains the user inputs
+      # Choose a dataset 
+      h1("Data selection"),
       selectInput(
         "option",
         "Choose a dataset",
@@ -46,22 +49,29 @@ shinyUI(fluidPage(
         ),
         selected=""
       ),
+      
+      # Select local authority (or all areas)
       selectInput(
         "option_la",
         "Choose a Local Authority",
         choices=las,
         selected="all"
       ),
+      
+      # select numerator or denominator using uiOutput to make reactive to above selection
       uiOutput("numerator"),
       uiOutput("denominator"),
+      # confirm selection button
       actionButton("ok_num_denom", "compile selection"),
       br(),
-      br(),
+      
+      # load shapefile and generate W matrix
       actionButton("load_shapefile_button", "click to load the shapefile"),
-       br(),
-       actionButton("make_w_matrix_button", "click to generate the neighbourhood matrix"),
+      actionButton("make_w_matrix_button", "click to generate the neighbourhood matrix"),
 
-      br(),br(),
+      hr(),
+      h1("Model tweaking"),
+      br(),
       sliderInput("posterior_sample_size", "choose posterior sample size",
                   min=1000, max=10000, step=1000, value=1000),
       br(),
