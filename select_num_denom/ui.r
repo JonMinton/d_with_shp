@@ -90,11 +90,8 @@ shinyUI(fluidPage(
       ),
       htmlOutput("all_checks"),
 
-      textOutput("report_w_matrix_generated"),
-      HTML("<p><b>Third</b>, after selecting the numerators and denominators, combine the data:</p>"),
-
+      h2("First few rows of data"),
       tableOutput("show_combined_input_table"),
-      tableOutput("report_attributes_linked"),
       br(),
       hr(),
       h1("Analysis"),

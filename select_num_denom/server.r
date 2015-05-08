@@ -9,9 +9,10 @@
 
 # server - load prerequisities --------------------------------------------
 
-require(reshape2)
+
 require(plyr)
 require(stringr)
+require(tidyr)
 require(ggplot2)
 require(maptools)
 require(grid)
@@ -319,60 +320,56 @@ shinyServer(function(input, output, server){
       
       # (1)"The numerator and denominator [have/have not] been selected"
       tmp <- combine_input_table()
+
       out_01 <- if (is.null(tmp)){
-        return("The numerator and denominator have not been selected")
+        "The numerator and denominator have not been selected"
       } else {
-        return(
-          paste(
+        paste(
             "The numerator and denominator have been selected and",
-            "has", dim(tmp)[1], "rows")
-          )
-      }
+            "has", dim(tmp)[1], "rows"
+            )
+        }
       # (2)"[The numerator and denominator selection is valid as no numerators are greater
       # than their denominators] / 
       tmp2 <- tmp$denominator - tmp$numerator
+
       out_02 <- if (any(tmp2 < 0)){
-          return(
             paste(
               "The numerator/denominator selection is invalid as",
               length(tmp2[tmp2 < 0]), "numerators are greater than",
               "the corresponding denominators. <strong>Please choose again</strong>"
               )
-            )
         } else {
-          return(
-            paste("The numerator/denominator selection is valid as",
-                 "no denominators are smaller than the corresponding",
-                  "numerators"
-                 )
-          )
+            paste(
+              "The numerator/denominator selection is valid as",
+              "no denominators are smaller than the corresponding",
+              "numerators"
+              )
         }
+
+      
       # (3) "[The shapefile has not been loaded]/
       # [The shapefile has been loaded and has length [[XXX]]"
       tmp3 <- load_shapefiles()
       
       
       out_03 <- if (is.null(shapefiles)){
-          return("Shapefiles not yet loaded")
+          "Shapefiles not yet loaded"
         } else {
-          return(
             paste(
               "The shapefiles have been loaded and have length", length(tmp3)
             )
-          )
         }
       
-      
-      return(HTML(
-        paste(
-          "<p>Data report:</p>",
-          "<ul>",
-            "<li>", out_01, "</li>",
-            "<li>", out_02, "</li>",
-            "<li>", out_03, "</li>",
-          "</ul>"
+      output <- paste(
+        "<p>Data report:</p>",
+        "<ul>",
+        "<li>", out_01, "</li>",
+        "<li>", out_02, "</li>",
+        "<li>", out_03, "</li>",
+        "</ul>"
         )
-      ))
+      return(output)
     })
   
   

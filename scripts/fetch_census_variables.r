@@ -1,24 +1,6 @@
 rm(list=ls())
 
-# To do: 
 
-# take 2001 and 2011 census tables identified previously and
-# link to datazones
-# standardise codes
-# allow people to select n and N
-
-# build UI to select 
-
-
-# install.packages(
-#   c(
-#   "plyr",
-#   "repmis",
-#   "dplyr",
-#   "ggplot2"
-#     )
-#   )
-# 
 
 require(plyr)
 require(stringr)
