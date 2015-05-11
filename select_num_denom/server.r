@@ -56,7 +56,7 @@ shinyServer(function(input, output, server){
   ###############################################################################################
   run_model <- reactive(
     {    
-      cat("run_model\n")
+      cat("server:reactive:run_model\n")
       out <- NULL
       w <- generate_w_matrix()
       dta <- combine_input_table()
@@ -93,7 +93,7 @@ shinyServer(function(input, output, server){
   generate_posterior_distribution <- eventReactive(
     input$generate_posterior_button,
     {
-      cat("generate_posterior_distribution\n")
+      cat("server:eventReactive:generate_posterior_distribution\n")
       model_outputs <- run_model()
       
       K <- input$posterior_sample_size      
@@ -115,7 +115,7 @@ shinyServer(function(input, output, server){
   summarise_posterior_distributions <- eventReactive (
     input$generate_posterior_button,
     {
-      cat("summarise_posterior_distribution\n")
+      cat("server:eventReactive:summarise_posterior_distribution\n")
       bayes <- generate_posterior_distribution()
       classical <- calc_d_classical()$D.boot
       n_digits <- 4
@@ -309,8 +309,8 @@ shinyServer(function(input, output, server){
       # than their denominators] / 
       # [The numerator and denominator selection is not valid because 
       # [[XXX]] numerators are greater than their denominators. Please choose again.]"
-      # (3) "The numerators/denominators [have/have not] been merged to the shapefiles."
-      # (4) "The shapefile [has/has not] been loaded"
+      # (3) "The shapefile [has/has not] been loaded"
+      # (4) "The numerators/denominators [have/have not] been merged to the shapefiles."
       # (5)"[The shapefile is needed to calculate the neighbourhood matrix]/
       # [The shapefile has been loaded but the neighbourhood matrix has not yet been calculated]/
       # [The neighbourhood matrix has been calculated]
@@ -351,9 +351,8 @@ shinyServer(function(input, output, server){
       # (3) "[The shapefile has not been loaded]/
       # [The shapefile has been loaded and has length [[XXX]]"
       tmp3 <- load_shapefiles()
-      
-      
-      out_03 <- if (is.null(shapefiles)){
+
+      out_03 <- if (is.null(tmp3)){
           "Shapefiles not yet loaded"
         } else {
             paste(
@@ -361,14 +360,55 @@ shinyServer(function(input, output, server){
             )
         }
       
-      output <- paste(
-        "<p>Data report:</p>",
+      # (4) "The numerators/denominators [have/have not] been merged to the shapefiles."
+      tmp4 <- link_shp_with_attributes()
+      
+      out_04 <- if(is.null(tmp4)){
+        "The numerators/denominators have not been merged to the shapefiles"
+      } else {
+        "The numerators/denominators have been merged to the shapefiles"
+      }
+      
+      # (5)"[The shapefile is needed to calculate the neighbourhood matrix]/
+      # [The shapefile has been loaded but the neighbourhood matrix has not yet been calculated]/
+      # [The neighbourhood matrix has been calculated]
+      
+      ###
+      
+      tmp5 <- generate_w_matrix()
+      
+      out_05 <- if(is.null(tmp4)){
+        "The neighbour matrix cannot be created. Check the shapefile has been loaded"
+      } else {
+        "The neighbour matrix has been calculated"
+      }
+        
+      # (6)"[All areal units are included. Warning: This may take some time"] /
+      # [Only one local authority has been selected]
+      
+      tmp6 <- input$option_la
+      
+      out_06 <- if(tmp6==""){
+        "No areal selection has been made yet"
+      } else if (tmp6=="all"){
+        "All of Scotland selected. This may take some time"
+      } else {
+        "Only one local authority selection. This will run fast but may not be representative"
+      }
+      
+      # (7) [The model [has not]/[has] been run"
+      
+      output <- HTML(paste(
+        "<p><b>Data report:</b></p>",
         "<ul>",
         "<li>", out_01, "</li>",
         "<li>", out_02, "</li>",
         "<li>", out_03, "</li>",
+        "<li>", out_04, "</li>",
+        "<li>", out_05, "</li>",
+        "<li>", out_06, "</li>",
         "</ul>"
-        )
+        ))
       return(output)
     })
   
@@ -420,5 +460,40 @@ shinyServer(function(input, output, server){
       return(out)
       
     })
+  
+  output$model_report <- renderUI({
+    cat("output:model_report\n")
+    
+    
+    # The structure of the output will read
+    
+    # (1)"Lower and upper threshold"
+    # (2) Probability true value within threshold
+    # (3) mean using classical and Bayesian
+    # (4) CrIs using classical and Bayesian
+    thresholds <- input$seg_k
+    
+    out_01 <- paste("The selected thresholds are", thresholds[1], " to", thresholds[2])
+    
+    samples <- generate_posterior_distribution()
+    
+    p_in_t <- length(samples[between(samples, thresholds[1], thresholds[2])]) / length(samples)
+    p_in_t <- round(p_in_t, 2)
+    
+    
+    out_02 <- paste("The probability that the true value is within the threshold selected is", p_in_t)
+    
+    
+    
+    output <- HTML(paste(
+      "<p><b>Data report:</b></p>",
+      "<ul>",
+      "<li>", out_01, "</li>",
+      "<li>", out_02, "</li>",
+      "</ul>"
+    ))
+    return(output)
+  })
+  
   
  })

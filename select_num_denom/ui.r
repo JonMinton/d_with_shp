@@ -36,7 +36,7 @@ shinyUI(fluidPage(
       #  This section contains the user inputs
       # Choose a dataset 
       h1("Data selection"),
-      selectInput(
+      cat("ui:selectInput:option\n"), selectInput(
         "option",
         "Choose a dataset",
         choices=c(
@@ -51,6 +51,7 @@ shinyUI(fluidPage(
       ),
       
       # Select local authority (or all areas)
+      cat("ui:selectInput:option_la\n"), 
       selectInput(
         "option_la",
         "Choose a Local Authority",
@@ -59,26 +60,26 @@ shinyUI(fluidPage(
       ),
       
       # select numerator or denominator using uiOutput to make reactive to above selection
-      uiOutput("numerator"),
-      uiOutput("denominator"),
+      cat("ui:uiOutput:numerator\n"), uiOutput("numerator"),
+      cat("ui:uiOutput:denominator\n"), uiOutput("denominator"),
       # confirm selection button
-      actionButton("ok_num_denom", "compile selection"),
+      cat("ui:actionButton:ok_num_demon\n"), actionButton("ok_num_denom", "compile selection"),
       br(),
       
       # load shapefile and generate W matrix
-      actionButton("load_shapefile_button", "click to load the shapefile"),
-      actionButton("make_w_matrix_button", "click to generate the neighbourhood matrix"),
+      cat("ui:actionButton:load_shapefile_button\n"), actionButton("load_shapefile_button", "click to load the shapefile"),
+      cat("ui:actionButton:make_w_matrix_button\n"), actionButton("make_w_matrix_button", "click to generate the neighbourhood matrix"),
 
       hr(),
       h1("Model tweaking"),
       br(),
-      sliderInput("posterior_sample_size", "choose posterior sample size",
+      cat("ui:sliderInput:posterior_sample_size\n"), sliderInput("posterior_sample_size", "choose posterior sample size",
                   min=1000, max=10000, step=1000, value=1000),
       br(),
-      actionButton("generate_posterior_button", "click to run model"),
+      cat("ui:actionButton:generate_posterior_button\n"), actionButton("generate_posterior_button", "click to run model"),
       
 
-       sliderInput("seg_k", "Choose segregation thresholds",
+      cat("ui:sliderInput:seg_k\n"), sliderInput("seg_k", "Choose segregation thresholds",
                    min=0, max=1, value=c(0,1))
       ),
     
@@ -88,18 +89,21 @@ shinyUI(fluidPage(
         "This secton shows some outputs that allow you to see whether the ",
         "prerequisites required by the model have been loaded successfully"
       ),
-      htmlOutput("all_checks"),
+      cat("ui:htmlOutput:all_checks\n"), htmlOutput("all_checks"),
 
-      h2("First few rows of data"),
-      tableOutput("show_combined_input_table"),
+      p("The first few rows of the selected data are shown below"),
+      cat("ui:tableOutput:show_combined_input_table\n"), tableOutput("show_combined_input_table"),
       br(),
       hr(),
       h1("Analysis"),
-      h2("report if posterior generated"),
-      textOutput("report_posterior_generated"),
+      p("This section will present results from the model run"),
+      p("Once the model has been run a figure will be generated"),
+      p("Along with other summary statistics"),
+      
+      cat("ui:textOutput:model_report\n"), htmlOutput("model_report"),
       h2("show plot"),
-      plotOutput("show_posterior_distribution"),
-      tableOutput("tabulate_posterior")
+      cat("ui:plotOutput:show_posterior_distribution\n"), plotOutput("show_posterior_distribution"),
+      cat("ui:tableOutput:tabulate_posterior\n"), tableOutput("tabulate_posterior")
 
       )
     )
